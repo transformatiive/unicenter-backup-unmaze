@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head><%- include('../partials/head') %></head>
+<body>
+  <%- include('../partials/nav') %>
+  <main class="container">
+    <h1>Contactos</h1>
+
+    <form method="GET" action="/contacts" class="search-bar">
+      <select name="field">
+        <option value="">Todos os campos-chave</option>
+        <% searchableFields.forEach(function(f) { %>
+          <option value="<%= f.key %>" <%= query.field === f.key ? 'selected' : '' %>><%= f.label %></option>
+        <% }) %>
+      </select>
+      <input type="text" name="q" placeholder="Pesquisar..." value="<%= query.q || '' %>">
+      <button type="submit" class="btn btn-primary">Pesquisar</button>
+      <% if (query.q) { %><a href="/contacts" class="btn btn-small">Limpar</a><% } %>
+    </form>
+
+    <p class="hint"><%= total %> registo(s) encontrado(s).</p>
+
+    <form method="POST" action="/contacts/export" id="export-form">
+      <input type="hidden" name="q" value="<%= query.q || '' %>">
+      <input type="hidden" name="field" value="<%= query.field || '' %>">
+      <input type="hidden" name="ids" id="export-ids" value="">
+
+      <div class="table-actions">
+        <button type="submit" name="scope" value="selected" class="btn" onclick="return prepareExport('selected')">
+          Exportar selecionados
+        </button>
+        <button type="submit" name="scope" value="all" class="btn btn-primary" onclick="return prepareExport('all')">
+          Exportar todos os resultados filtrados
+        </button>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="select-all"></th>
+            <% columns.forEach(function(c) { %><th><%= c.label %></th><% }) %>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function(r) { %>
+          <tr>
+            <td><input type="checkbox" class="row-check" value="<%= r.id %>"></td>
+            <% columns.forEach(function(c) { %><td><%= r[c.key] || '' %></td><% }) %>
+          </tr>
+          <% }) %>
+          <% if (rows.length === 0) { %>
+          <tr><td colspan="<%= columns.length + 1 %>">Sem resultados.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </form>
+
+    <% if (totalPages > 1) { %>
+    <nav class="pagination">
+      <% for (let p = 1; p <= totalPages; p++) { %>
+        <a class="<%= p === page ? 'active' : '' %>"
+           href="/contacts?page=<%= p %>&q=<%= encodeURIComponent(query.q || '') %>&field=<%= encodeURIComponent(query.field || '') %>">
+          <%= p %>
+        </a>
+      <% } %>
+    </nav>
+    <% } %>
+  </main>
+  <script src="/js/contacts.js"></script>
+</body>
+</html>

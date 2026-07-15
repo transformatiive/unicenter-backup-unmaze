@@ -1,0 +1,17 @@
+<% if (typeof currentUser !== 'undefined' && currentUser) { %>
+<header class="topbar">
+  <div class="topbar-brand">Unicenter <span>· Backup Unmaze</span></div>
+  <nav class="topbar-nav">
+    <a href="/contacts">Contactos</a>
+    <a href="/gdpr">RGPD</a>
+    <% if (currentUser.is_admin) { %>
+      <a href="/admin/users">Utilizadores</a>
+    <% } %>
+    <a href="/change-password">Alterar password</a>
+    <span class="topbar-user"><%= currentUser.username %></span>
+    <form method="POST" action="/logout" style="display:inline">
+      <button type="submit" class="link-button">Sair</button>
+    </form>
+  </nav>
+</header>
+<% } %>

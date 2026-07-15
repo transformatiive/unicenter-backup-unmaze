@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head><%- include('../partials/head') %></head>
+<body>
+  <%- include('../partials/nav') %>
+  <main class="container">
+    <h1>Administração de utilizadores</h1>
+    <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+    <% if (message) { %><div class="alert alert-success"><%= message %></div><% } %>
+
+    <section class="card">
+      <h2>Novo utilizador</h2>
+      <form method="POST" action="/admin/users" class="inline-form">
+        <label>Utilizador <input type="text" name="username" required></label>
+        <label>Password inicial <input type="password" name="password" required minlength="8"></label>
+        <label class="checkbox"><input type="checkbox" name="is_admin" value="1"> Administrador</label>
+        <button type="submit" class="btn btn-primary">Criar</button>
+      </form>
+      <p class="hint">O utilizador terá de alterar a password no primeiro login.</p>
+    </section>
+
+    <section class="card">
+      <h2>Utilizadores existentes</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Utilizador</th>
+            <th>Admin</th>
+            <th>Estado</th>
+            <th>Deve alterar password</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% users.forEach(function(u) { %>
+          <tr>
+            <td><%= u.username %></td>
+            <td><%= u.is_admin ? 'Sim' : 'Não' %></td>
+            <td>
+              <span class="badge <%= u.active ? 'badge-active' : 'badge-inactive' %>">
+                <%= u.active ? 'Ativo' : 'Inativo' %>
+              </span>
+            </td>
+            <td><%= u.must_change_password ? 'Sim' : 'Não' %></td>
+            <td class="actions">
+              <form method="POST" action="/admin/users/<%= u.id %>/toggle-active" style="display:inline">
+                <button type="submit" class="btn btn-small">
+                  <%= u.active ? 'Desativar' : 'Ativar' %>
+                </button>
+              </form>
+              <details style="display:inline-block">
+                <summary class="btn btn-small">Redefinir password</summary>
+                <form method="POST" action="/admin/users/<%= u.id %>/reset-password" class="reset-form">
+                  <input type="password" name="new_password" placeholder="Nova password" required minlength="8">
+                  <button type="submit" class="btn btn-small btn-primary">Guardar</button>
+                </form>
+              </details>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

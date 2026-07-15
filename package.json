@@ -1,0 +1,26 @@
+{
+  "name": "unicenter-backup-unmaze",
+  "version": "1.0.0",
+  "description": "Aplicação de consulta ao backup de contactos Unmaze (Unicenter) com autenticação e administração de utilizadores",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "migrate": "node scripts/migrate.js",
+    "seed:admin": "node scripts/seed_admin.js",
+    "import:csv": "node scripts/import_csv.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "connect-pg-simple": "^9.0.1",
+    "csv-parse": "^5.5.6",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "helmet": "^7.1.0",
+    "pg": "^8.11.5",
+    "pg-copy-streams": "^6.0.6"
+  }
+}
