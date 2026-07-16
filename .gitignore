@@ -1,0 +1,21 @@
+# Dependências
+node_modules/
+
+# Ambiente / segredos (nunca commitar) — ver .env.example
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dados / imports (nunca commitar dados pessoais)
+*.csv
+Contactos_*.csv
+
+# Sistema operativo / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
