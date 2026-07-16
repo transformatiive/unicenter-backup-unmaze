@@ -22,12 +22,11 @@ const SEARCHABLE_FIELDS = [
   { key: 'nif', label: 'NIF' },
   { key: 'campanha_actual', label: 'Campanha' },
   { key: 'chavealunounmaze', label: 'Chave Unmaze' },
-  { key: 'source_id', label: 'ID origem' },
 ];
 
 const LIST_COLUMNS = [
   { key: 'id', label: 'ID' },
-  { key: 'source_id', label: 'ID origem' },
+  { key: 'chavealunounmaze', label: 'Chave Unmaze' },
   { key: 'name', label: 'Nome' },
   { key: 'escola', label: 'Escola' },
   { key: 'ano_escolar', label: 'Ano' },

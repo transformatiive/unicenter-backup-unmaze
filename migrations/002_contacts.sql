@@ -1,15 +1,19 @@
 -- Schema REAL da tabela contacts, gerado a partir do cabeçalho verdadeiro de
 -- Contactos_Consolidado.csv (89 colunas do export consolidado Unmaze/akademis).
--- Os nomes de coluna são os nomes sanitizados que scripts/import_csv.js produz
--- (minúsculas, acentos removidos, não-alfanuméricos -> "_"), para o mapeamento
--- automático do import bater certo. A coluna "id" do CSV é guardada como
--- "source_id" (o "id" da tabela é a chave serial gerida pela app).
+-- Os nomes de coluna são exatamente os nomes sanitizados que scripts/import_csv.js
+-- produz (minúsculas, acentos removidos, não-alfanuméricos -> "_"), para o mapeamento
+-- automático do import bater a 100%, sem qualquer pré-processamento do ficheiro.
+--
+-- A coluna "id" do CSV não é guardada como coluna própria (coincide com a PK serial
+-- da app); o seu valor está preservado dentro de "chavealunounmaze", que tem o
+-- formato "<id>-<nome do aluno>". Se um dia for preciso o id em bruto, acrescenta-se
+-- uma coluna e mapeia-se.
+--
 -- Colunas geridas pela app (não vêm do CSV): id, deleted_at, deleted_reason,
 -- created_at, updated_at.
 
 CREATE TABLE IF NOT EXISTS contacts (
   id                  SERIAL PRIMARY KEY,
-  source_id                TEXT,
   id_import                TEXT,
   chavealunounmaze         TEXT,
   chavealuno               TEXT,
@@ -104,7 +108,6 @@ CREATE TABLE IF NOT EXISTS contacts (
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_contacts_source_id ON contacts (source_id);
 CREATE INDEX IF NOT EXISTS idx_contacts_chavealunounmaze ON contacts (chavealunounmaze);
 CREATE INDEX IF NOT EXISTS idx_contacts_chavealuno ON contacts (chavealuno);
 CREATE INDEX IF NOT EXISTS idx_contacts_chaveee ON contacts (chaveee);
