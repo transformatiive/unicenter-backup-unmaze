@@ -3,7 +3,7 @@
 <head><%- include('../partials/head') %></head>
 <body>
   <%- include('../partials/nav') %>
-  <main class="container">
+  <main class="container container-wide">
     <h1>Contactos</h1>
 
     <form method="GET" action="/contacts" class="search-bar">
@@ -14,11 +14,52 @@
         <% }) %>
       </select>
       <input type="text" name="q" placeholder="Pesquisar..." value="<%= query.q || '' %>">
+      <input type="hidden" name="pageSize" value="<%= pageSize %>">
       <button type="submit" class="btn btn-primary">Pesquisar</button>
-      <% if (query.q) { %><a href="/contacts" class="btn btn-small">Limpar</a><% } %>
+      <% if (query.q) { %><a href="/contacts?pageSize=<%= pageSize %>" class="btn btn-small">Limpar</a><% } %>
     </form>
 
-    <p class="hint"><%= total %> registo(s) encontrado(s).</p>
+    <%
+      function pageUrl(p) {
+        var params = new URLSearchParams();
+        if (query.q) params.set('q', query.q);
+        if (query.field) params.set('field', query.field);
+        params.set('pageSize', pageSize);
+        params.set('page', p);
+        return '/contacts?' + params.toString();
+      }
+      var currentQs = (function () {
+        var params = new URLSearchParams();
+        if (query.q) params.set('q', query.q);
+        if (query.field) params.set('field', query.field);
+        params.set('pageSize', pageSize);
+        params.set('page', page);
+        return params.toString();
+      })();
+      var backParam = encodeURIComponent(currentQs);
+    %>
+
+    <div class="list-toolbar">
+      <span class="hint">
+        <% if (total > 0) { %>
+          A mostrar <strong><%= fromRow.toLocaleString('pt-PT') %></strong>–<strong><%= toRow.toLocaleString('pt-PT') %></strong>
+          de <strong><%= total.toLocaleString('pt-PT') %></strong> registo(s)
+        <% } else { %>
+          Nenhum registo encontrado
+        <% } %>
+      </span>
+      <form method="GET" action="/contacts" class="page-size">
+        <input type="hidden" name="q" value="<%= query.q || '' %>">
+        <input type="hidden" name="field" value="<%= query.field || '' %>">
+        <label>Por página
+          <select name="pageSize" onchange="this.form.submit()">
+            <% pageSizeOptions.forEach(function(opt) { %>
+              <option value="<%= opt %>" <%= opt === pageSize ? 'selected' : '' %>><%= opt %></option>
+            <% }) %>
+          </select>
+        </label>
+      </form>
+    </div>
 
     <form method="POST" action="/contacts/export" id="export-form">
       <input type="hidden" name="q" value="<%= query.q || '' %>">
@@ -34,36 +75,69 @@
         </button>
       </div>
 
-      <table class="table">
-        <thead>
-          <tr>
-            <th><input type="checkbox" id="select-all"></th>
-            <% columns.forEach(function(c) { %><th><%= c.label %></th><% }) %>
-          </tr>
-        </thead>
-        <tbody>
-          <% rows.forEach(function(r) { %>
-          <tr>
-            <td><input type="checkbox" class="row-check" value="<%= r.id %>"></td>
-            <% columns.forEach(function(c) { %><td><%= r[c.key] || '' %></td><% }) %>
-          </tr>
-          <% }) %>
-          <% if (rows.length === 0) { %>
-          <tr><td colspan="<%= columns.length + 1 %>">Sem resultados.</td></tr>
-          <% } %>
-        </tbody>
-      </table>
+      <div class="table-wrap">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th class="col-check"><input type="checkbox" id="select-all"></th>
+              <% columns.forEach(function(c) { %><th><%= c.label %></th><% }) %>
+              <th class="col-action"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% rows.forEach(function(r) { %>
+            <tr data-href="/contacts/<%= r.id %>?back=<%= backParam %>">
+              <td class="col-check"><input type="checkbox" class="row-check" value="<%= r.id %>"></td>
+              <% columns.forEach(function(c) { %>
+                <% if (c.key === 'id') { %>
+                  <td><a class="row-link" href="/contacts/<%= r.id %>?back=<%= backParam %>"><%= r.id %></a></td>
+                <% } else { %>
+                  <td><%= r[c.key] || '' %></td>
+                <% } %>
+              <% }) %>
+              <td class="col-action"><a class="btn btn-small" href="/contacts/<%= r.id %>?back=<%= backParam %>">Ver ›</a></td>
+            </tr>
+            <% }) %>
+            <% if (rows.length === 0) { %>
+            <tr><td colspan="<%= columns.length + 2 %>" class="empty-row">Sem resultados.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
     </form>
 
     <% if (totalPages > 1) { %>
-    <nav class="pagination">
-      <% for (let p = 1; p <= totalPages; p++) { %>
-        <a class="<%= p === page ? 'active' : '' %>"
-           href="/contacts?page=<%= p %>&q=<%= encodeURIComponent(query.q || '') %>&field=<%= encodeURIComponent(query.field || '') %>">
-          <%= p %>
-        </a>
-      <% } %>
-    </nav>
+    <div class="pagination-bar">
+      <nav class="pagination">
+        <% if (page > 1) { %>
+          <a href="<%= pageUrl(1) %>" title="Primeira página">« Primeira</a>
+          <a href="<%= pageUrl(page - 1) %>" rel="prev">‹ Anterior</a>
+        <% } else { %>
+          <span class="disabled">« Primeira</span>
+          <span class="disabled">‹ Anterior</span>
+        <% } %>
+
+        <span class="pagination-current">Página <strong><%= page.toLocaleString('pt-PT') %></strong> de <%= totalPages.toLocaleString('pt-PT') %></span>
+
+        <% if (page < totalPages) { %>
+          <a href="<%= pageUrl(page + 1) %>" rel="next">Próxima ›</a>
+          <a href="<%= pageUrl(totalPages) %>" title="Última página">Última »</a>
+        <% } else { %>
+          <span class="disabled">Próxima ›</span>
+          <span class="disabled">Última »</span>
+        <% } %>
+      </nav>
+
+      <form method="GET" action="/contacts" class="page-jump">
+        <input type="hidden" name="q" value="<%= query.q || '' %>">
+        <input type="hidden" name="field" value="<%= query.field || '' %>">
+        <input type="hidden" name="pageSize" value="<%= pageSize %>">
+        <label>Ir para
+          <input type="number" name="page" min="1" max="<%= totalPages %>" value="<%= page %>">
+        </label>
+        <button type="submit" class="btn btn-small">Ir</button>
+      </form>
+    </div>
     <% } %>
   </main>
   <script src="/js/contacts.js"></script>

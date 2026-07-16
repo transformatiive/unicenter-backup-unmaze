@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head><%- include('../partials/head') %></head>
+<body>
+  <%- include('../partials/nav') %>
+  <main class="container container-wide">
+    <div class="detail-head">
+      <a class="btn btn-small" href="/contacts<%= backQuery ? ('?' + backQuery) : '' %>">‹ Voltar à lista</a>
+      <h1><%= title %></h1>
+      <span class="hint">ID interno: <%= row.id %></span>
+    </div>
+
+    <div class="detail-grid">
+      <% groups.forEach(function(group) { %>
+        <section class="card detail-card">
+          <h2><%= group.title %></h2>
+          <dl class="detail-list">
+            <% group.fields.forEach(function(f) { %>
+              <div class="detail-item">
+                <dt><%= f.label %></dt>
+                <dd class="<%= (f.value === null || f.value === '') ? 'empty' : '' %>">
+                  <%= (f.value === null || f.value === '') ? '—' : f.value %>
+                </dd>
+              </div>
+            <% }) %>
+          </dl>
+        </section>
+      <% }) %>
+    </div>
+  </main>
+</body>
+</html>
