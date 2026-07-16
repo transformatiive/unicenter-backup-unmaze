@@ -6,31 +6,40 @@ const router = express.Router();
 
 /*
  * Campos-chave disponíveis para pesquisa/filtragem.
- * ATENÇÃO: esta lista tem de ser atualizada assim que soubermos o schema real
- * do Contactos_Consolidado.csv (ver migrations/002_contacts.sql).
+ * Nomes de coluna reais do Contactos_Consolidado.csv (ver migrations/002_contacts.sql),
+ * sanitizados da mesma forma que scripts/import_csv.js.
  */
 const SEARCHABLE_FIELDS = [
-  { key: 'aluno_nome', label: 'Nome do aluno' },
-  { key: 'ee_nome', label: 'Nome do encarregado de educação' },
-  { key: 'ee_telefone', label: 'Telefone' },
-  { key: 'escola_nome', label: 'Escola' },
-  { key: 'distrito', label: 'Distrito' },
-  { key: 'concelho', label: 'Concelho' },
-  { key: 'campanha', label: 'Campanha' },
-  { key: 'external_id', label: 'ID externo' },
+  { key: 'name', label: 'Nome (aluno)' },
+  { key: 'nome_de_encarregado_d', label: 'Encarregado de Educação' },
+  { key: 'telefone', label: 'Telefone' },
+  { key: 'telemvel', label: 'Telemóvel' },
+  { key: 'email', label: 'Email' },
+  { key: 'email_ee', label: 'Email do EE' },
+  { key: 'escola', label: 'Escola' },
+  { key: 'localidade', label: 'Localidade' },
+  { key: 'cod_postal', label: 'Código Postal' },
+  { key: 'nif', label: 'NIF' },
+  { key: 'campanha_actual', label: 'Campanha' },
+  { key: 'chavealunounmaze', label: 'Chave Unmaze' },
+  { key: 'source_id', label: 'ID origem' },
 ];
 
 const LIST_COLUMNS = [
   { key: 'id', label: 'ID' },
-  { key: 'external_id', label: 'ID externo' },
-  { key: 'aluno_nome', label: 'Aluno' },
-  { key: 'aluno_ano', label: 'Ano' },
-  { key: 'escola_nome', label: 'Escola' },
-  { key: 'ee_nome', label: 'Encarregado de Educação' },
-  { key: 'ee_telefone', label: 'Telefone' },
-  { key: 'ee_email', label: 'Email' },
-  { key: 'distrito', label: 'Distrito' },
-  { key: 'concelho', label: 'Concelho' },
+  { key: 'source_id', label: 'ID origem' },
+  { key: 'name', label: 'Nome' },
+  { key: 'escola', label: 'Escola' },
+  { key: 'ano_escolar', label: 'Ano' },
+  { key: 'turma_1', label: 'Turma' },
+  { key: 'nome_de_encarregado_d', label: 'Encarregado de Educação' },
+  { key: 'telefone', label: 'Telefone' },
+  { key: 'telemvel', label: 'Telemóvel' },
+  { key: 'email', label: 'Email' },
+  { key: 'localidade', label: 'Localidade' },
+  { key: 'cod_postal', label: 'Cód. Postal' },
+  { key: 'campanha_actual', label: 'Campanha' },
+  { key: 'status_name', label: 'Estado' },
 ];
 
 const PAGE_SIZE = 50;
