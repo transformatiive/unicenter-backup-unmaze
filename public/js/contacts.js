@@ -7,6 +7,14 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
   }
+
+  // Linha clicável -> abre o detalhe (exceto ao clicar na checkbox, link ou botão).
+  document.querySelectorAll('tr[data-href]').forEach(function (tr) {
+    tr.addEventListener('click', function (e) {
+      if (e.target.closest('input, a, button, label')) return;
+      window.location = tr.getAttribute('data-href');
+    });
+  });
 });
 
 function prepareExport(scope) {
