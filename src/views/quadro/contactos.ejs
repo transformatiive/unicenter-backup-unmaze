@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head><%- include('../partials/head') %></head>
+<body>
+  <%- include('../partials/nav') %>
+  <main>
+    <div class="page-head">
+      <div class="row">
+        <h1>Contactos escolhidos <small class="tn"><%= total.toLocaleString('pt-PT') %></small></h1>
+        <a class="btn" href="<%= back %>">Voltar ao quadro</a>
+      </div>
+      <p><%= title %></p>
+    </div>
+    <div class="page-body">
+      <%- include('../partials/contact_rows', { rows: rows }) %>
+      <% if (totalPages > 1) { %>
+      <div class="pagination-bar"><nav class="pagination">
+        <% if (page > 1) { %><a href="?s=<%= s %>&page=<%= page - 1 %>">‹ Anterior</a><% } else { %><span class="disabled">‹ Anterior</span><% } %>
+        <span class="pagination-current">Página <strong><%= page.toLocaleString('pt-PT') %></strong> de <%= totalPages.toLocaleString('pt-PT') %></span>
+        <% if (page < totalPages) { %><a href="?s=<%= s %>&page=<%= page + 1 %>">Próxima ›</a><% } else { %><span class="disabled">Próxima ›</span><% } %>
+      </nav></div>
+      <% } %>
+    </div>
+  </main>
+</body>
+</html>

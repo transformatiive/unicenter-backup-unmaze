@@ -4,7 +4,7 @@
 <body>
   <%- include('../partials/nav') %>
   <main class="container container-wide">
-    <h1>Contactos</h1>
+    <h1>Contactos <small class="tn"><%= total.toLocaleString('pt-PT') %></small></h1>
 
     <form method="GET" action="/contacts" class="search-bar">
       <select name="field">
@@ -61,18 +61,19 @@
       </form>
     </div>
 
-    <form method="POST" action="/contacts/export" id="export-form">
+    <form method="POST" action="/lotes/pesquisa" id="export-form">
       <input type="hidden" name="q" value="<%= query.q || '' %>">
       <input type="hidden" name="field" value="<%= query.field || '' %>">
       <input type="hidden" name="ids" id="export-ids" value="">
 
       <div class="table-actions">
         <button type="submit" name="scope" value="selected" class="btn" onclick="return prepareExport('selected')">
-          Exportar selecionados
+          Criar lote com os selecionados
         </button>
         <button type="submit" name="scope" value="all" class="btn btn-primary" onclick="return prepareExport('all')">
-          Exportar todos os resultados filtrados
+          Criar lote com todos os resultados
         </button>
+        <span class="hint">Cada exportação é um lote: escolhe o formato (CSV ou Excel) a seguir.</span>
       </div>
 
       <div class="table-wrap">

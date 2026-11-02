@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head><%- include('../partials/head') %></head>
+<body>
+  <%- include('../partials/nav') %>
+  <main>
+    <%
+      var max = 1;
+      Object.keys(matrix.counts).forEach(function (k) { if (matrix.counts[k] > max) max = matrix.counts[k]; });
+      function n(v) { return Number(v || 0).toLocaleString('pt-PT'); }
+      function count(r, c) { return matrix.counts[r + '\u0001' + c] || 0; }
+      function bg(v) {
+        var p = v / max;
+        if (p < 0.35) return 'var(--chip)';
+        return 'color-mix(in srgb, var(--teal) ' + Math.round(10 + (p - 0.35) / 0.65 * 40) + '%, #fff)';
+      }
+    %>
+    <form method="GET" action="/quadro" class="page-head" id="qform">
+      <div class="row">
+        <h1>Quadro cruzado <small class="tn"><%= n(matrix.total) %> contactos</small></h1>
+      </div>
+      <div class="ctrls">
+        <span class="lbl">Linhas</span>
+        <select name="r" class="inline" onchange="this.form.submit()">
+          <% Object.keys(dims).forEach(function (k) { %><option value="<%= k %>" <%= crit.r === k ? 'selected' : '' %>><%= dims[k].label %></option><% }) %>
+        </select>
+        <span class="lbl">Colunas</span>
+        <select name="c" class="inline" onchange="this.form.submit()">
+          <% Object.keys(dims).forEach(function (k) { %><option value="<%= k %>" <%= crit.c === k ? 'selected' : '' %>><%= dims[k].label %></option><% }) %>
+        </select>
+        <span class="lbl">Campanha</span>
+        <select name="camp" class="inline" onchange="this.form.submit()">
+          <option value="">Todas</option>
+          <% campaigns.forEach(function (x) { %><option value="<%= x.v %>" <%= crit.camp === x.v ? 'selected' : '' %>><%= x.v %></option><% }) %>
+        </select>
+        <span class="lbl">Etiqueta</span>
+        <select name="tag" class="inline" onchange="this.form.submit()">
+          <option value="">Todas</option>
+          <% tags.forEach(function (t) { %><option value="<%= t.id %>" <%= crit.tag === t.id ? 'selected' : '' %>><%= t.name %></option><% }) %>
+        </select>
+        <input type="hidden" name="aut" value="0">
+        <label class="switch"><input type="checkbox" name="aut" value="1" <%= crit.aut ? 'checked' : '' %> onchange="this.form.submit()"> Só com autorização de dados</label>
+        <input type="hidden" name="excl" value="0">
+        <label class="switch"><input type="checkbox" name="excl" value="1" <%= crit.excl ? 'checked' : '' %> onchange="this.form.submit()"> Esconder quem já saiu num lote</label>
+      </div>
+    </form>
+
+    <div class="selbar" id="selbar" hidden>
+      <div class="t"><span><b class="tn" id="sN">…</b> contactos em <b id="sG">0</b> grupos</span><button type="button" id="sClear">limpar</button></div>
+      <div class="actions">
+        <button type="button" class="btn" id="sSee">Ver contactos</button>
+        <button type="button" class="btn" id="sTag">Etiquetar</button>
+        <button type="button" class="btn btn-primary" id="sLote">Criar lote de envio</button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <% if (msg) { %><div class="alert alert-success"><%= msg %></div><% } %>
+      <div class="card flush">
+        <div class="card-head"><div><h2><%= dims[crit.r].label %> × <%= dims[crit.c].label %></h2>
+          <p>Clique num quadrado para o juntar ao envio. Clique no nome de uma linha ou coluna para a escolher toda. Mostra os <%= matrix.rTop.length %> e <%= matrix.cTop.length %> valores mais frequentes; o resto fica em "Outros".</p></div></div>
+        <% if (matrix.total === 0) { %>
+          <p class="empty-row">Nenhum contacto com estes filtros.</p>
+        <% } else { %>
+        <div class="mx-wrap">
+          <table class="mx" id="mx">
+            <thead><tr><th></th>
+              <% matrix.colsAxis.forEach(function (c, j) { %><th><button type="button" data-col="<%= j %>" title="<%= valueLabel(c) %>"><%= valueLabel(c) %></button></th><% }) %>
+              <th class="tot">Total</th></tr></thead>
+            <tbody>
+              <% var colTot = {}; matrix.rowsAxis.forEach(function (r, i) { var t = 0; %>
+              <tr><th class="rh"><button type="button" data-row="<%= i %>" title="<%= valueLabel(r) %>"><%= valueLabel(r) %></button></th>
+                <% matrix.colsAxis.forEach(function (c, j) { var v = count(r, c); t += v; colTot[j] = (colTot[j] || 0) + v; %>
+                <td><button type="button" class="cell<%= v ? '' : ' zero' %>" data-i="<%= i %>" data-j="<%= j %>" data-n="<%= v %>" style="background:<%= bg(v) %>" <%= v ? '' : 'disabled' %>><%= n(v) %></button></td>
+                <% }) %>
+                <td class="tot"><%= n(t) %></td></tr>
+              <% }) %>
+            </tbody>
+            <tfoot><tr><td class="tot" style="text-align:left;padding-left:16px">Total</td>
+              <% matrix.colsAxis.forEach(function (c, j) { %><td class="tot" style="text-align:center;padding-right:3px"><%= n(colTot[j]) %></td><% }) %>
+              <td class="tot"><%= n(matrix.total) %></td></tr></tfoot>
+          </table>
+        </div>
+        <div class="legend"><span>Número de contactos:</span><i style="background:var(--chip)"></i>poucos<i style="background:color-mix(in srgb,var(--teal) 22%,#fff)"></i><i style="background:color-mix(in srgb,var(--teal) 45%,#fff)"></i>muitos<i style="background:var(--teal)"></i>escolhido</div>
+        <% } %>
+      </div>
+
+      <div class="stats" id="stats">
+        <div class="card stat"><div class="k" id="st0k">No quadro</div><div class="v" id="st0"><%= n(matrix.total) %></div><div class="k" style="margin-top:10px" id="st0s">Escolha grupos para ver o detalhe</div></div>
+        <div class="card stat"><div class="k">Com email</div><div class="v" id="st1">–</div><div class="bar"><i id="st1b" style="width:0"></i></div></div>
+        <div class="card stat"><div class="k">Com telemóvel</div><div class="v" id="st2">–</div><div class="bar"><i id="st2b" style="width:0"></i></div></div>
+        <div class="card stat"><div class="k">Com etiqueta</div><div class="v" id="st3">–</div><div class="bar"><i id="st3b" style="width:0"></i></div></div>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="dlg" id="dTag">
+    <form method="dialog" id="fTag">
+      <header><h3>Etiquetar <span class="tn" data-sel-n></span> contactos</h3><p>Escolha uma etiqueta ou escreva uma nova. Os contactos que já a tinham ficam como estão.</p></header>
+      <div class="bd">
+        <div class="tagpick">
+          <% tags.forEach(function (t) { %><label class="ck" style="border:1px solid var(--g200);border-radius:8px;padding:4px 10px"><input type="radio" name="tagId" value="<%= t.id %>"> <span class="dot" style="background:<%= t.color %>"></span><%= t.name %></label><% }) %>
+        </div>
+        <label>Nova etiqueta <input type="text" name="tagName" maxlength="80" placeholder="Ex.: Campanha Natal 2026"></label>
+      </div>
+      <footer><button value="cancel" class="btn" formnovalidate>Cancelar</button><button type="submit" value="ok" class="btn btn-primary">Etiquetar</button></footer>
+    </form>
+  </dialog>
+
+  <dialog class="dlg" id="dLote">
+    <form method="dialog" id="fLote">
+      <header><h3>Criar lote de envio</h3><p><span class="tn" data-sel-n></span> contactos. A seguir escolhe o formato e descarrega.</p></header>
+      <div class="bd">
+        <label>Nome do lote <input type="text" name="name" maxlength="120" required></label>
+        <label class="ck"><input type="checkbox" name="tagIt" value="1" checked> Pôr uma etiqueta com o nome do lote nestes contactos</label>
+        <div class="note">O lote guarda a lista exata de contactos. Quem entra num lote deixa de aparecer no quadro (pode desligar em "Esconder quem já saiu num lote").</div>
+      </div>
+      <footer><button value="cancel" class="btn" formnovalidate>Cancelar</button><button type="submit" value="ok" class="btn btn-primary">Criar lote</button></footer>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script type="application/json" id="qdata"><%- JSON.stringify({
+    crit: { r: crit.r, c: crit.c, camp: crit.camp, tag: crit.tag, aut: crit.aut, excl: crit.excl },
+    rowsAxis: matrix.rowsAxis, colsAxis: matrix.colsAxis, rTop: matrix.rTop, cTop: matrix.cTop,
+    rLabel: dims[crit.r].label, cLabel: dims[crit.c].label, total: matrix.total
+  }).replace(/</g, '\\u003c') %></script>
+  <script src="/js/quadro.js"></script>
+</body>
+</html>
