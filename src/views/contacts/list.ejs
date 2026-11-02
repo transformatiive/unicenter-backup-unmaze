@@ -61,7 +61,7 @@
       </form>
     </div>
 
-    <form method="POST" action="/lotes/pesquisa" id="export-form">
+    <form method="POST" action="/lotes/pesquisa" id="export-form" data-total="<%= total %>">
       <input type="hidden" name="q" value="<%= query.q || '' %>">
       <input type="hidden" name="field" value="<%= query.field || '' %>">
       <input type="hidden" name="ids" id="export-ids" value="">
