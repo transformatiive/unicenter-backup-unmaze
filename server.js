@@ -123,5 +123,11 @@ bootstrap()
     app.listen(PORT, () => {
       // eslint-disable-next-line no-console
       console.log(`[server] a correr na porta ${PORT}`);
+      // Atualiza o mapa de visibilidade e as estatísticas da tabela em segundo plano,
+      // para o Postgres poder usar o índice do quadro sem ler a tabela (migração 005).
+      // Não altera dados. Depois da primeira vez é rápido.
+      pool.query('VACUUM (ANALYZE) contacts')
+        .then(() => console.log('[server] estatísticas de contacts atualizadas.'))
+        .catch((err) => console.warn('[server] VACUUM contacts falhou:', err.message));
     });
   });

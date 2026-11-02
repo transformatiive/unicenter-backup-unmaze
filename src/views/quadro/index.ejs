@@ -56,6 +56,12 @@
 
     <div class="page-body">
       <% if (msg) { %><div class="alert alert-success"><%= msg %></div><% } %>
+      <div class="stats" id="stats">
+        <div class="card stat"><div class="k" id="st0k">No quadro</div><div class="v" id="st0"><%= n(matrix.total) %></div><div class="k" style="margin-top:10px" id="st0s">Escolha grupos para ver o detalhe</div></div>
+        <div class="card stat"><div class="k">Com email</div><div class="v" id="st1">–</div><div class="bar"><i id="st1b" style="width:0"></i></div></div>
+        <div class="card stat"><div class="k">Com telemóvel</div><div class="v" id="st2">–</div><div class="bar"><i id="st2b" style="width:0"></i></div></div>
+        <div class="card stat"><div class="k">Com etiqueta</div><div class="v" id="st3">–</div><div class="bar"><i id="st3b" style="width:0"></i></div></div>
+      </div>
       <div class="card flush">
         <div class="card-head"><div><h2><%= dims[crit.r].label %> × <%= dims[crit.c].label %></h2>
           <p>Clique num quadrado para o juntar ao envio. Clique no nome de uma linha ou coluna para a escolher toda. Mostra os <%= matrix.rTop.length %> e <%= matrix.cTop.length %> valores mais frequentes; o resto fica em "Outros".</p></div></div>
@@ -85,12 +91,6 @@
         <% } %>
       </div>
 
-      <div class="stats" id="stats">
-        <div class="card stat"><div class="k" id="st0k">No quadro</div><div class="v" id="st0"><%= n(matrix.total) %></div><div class="k" style="margin-top:10px" id="st0s">Escolha grupos para ver o detalhe</div></div>
-        <div class="card stat"><div class="k">Com email</div><div class="v" id="st1">–</div><div class="bar"><i id="st1b" style="width:0"></i></div></div>
-        <div class="card stat"><div class="k">Com telemóvel</div><div class="v" id="st2">–</div><div class="bar"><i id="st2b" style="width:0"></i></div></div>
-        <div class="card stat"><div class="k">Com etiqueta</div><div class="v" id="st3">–</div><div class="bar"><i id="st3b" style="width:0"></i></div></div>
-      </div>
     </div>
   </main>
 

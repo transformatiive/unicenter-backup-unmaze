@@ -54,6 +54,9 @@ body:has(> aside.side) > main { flex: 1; min-width: 0; }
 .side-user .who small { display: block; color: var(--g400); font-size: 12px; font-weight: 400; }
 .link-button { background: none; border: 0; color: var(--g400); cursor: pointer; font-size: 13px; padding: 4px; }
 .link-button:hover { color: var(--danger); }
+.side-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; color: var(--g400); }
+.side-icon:hover { background: var(--g100); color: var(--teal); }
+.side-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 .page-head {
   position: sticky; top: 0; z-index: 10; background: rgba(249,250,251,.95); backdrop-filter: blur(6px);
@@ -247,3 +250,35 @@ dialog.dlg::backdrop { background: rgba(0,0,0,.3); }
   .page-head { position: static; }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ---------- Listas de escolha (public/js/ui.js) ---------- */
+select.ui-native { position: absolute !important; width: 1px !important; height: 1px !important; opacity: 0; pointer-events: none; margin: 0 !important; padding: 0 !important; border: 0 !important; }
+.ui-select { position: relative; display: block; margin-top: 4px; }
+.ui-select.inline, .ctrls .ui-select, .search-bar .ui-select, .page-size .ui-select { display: inline-block; margin-top: 0; }
+.search-bar .ui-select .ui-select-trigger { min-width: 220px; }
+.ui-select-trigger {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
+  padding: 7px 10px 7px 12px; border: 1px solid var(--g200); border-radius: 8px; background: #fff;
+  font: inherit; font-size: 14px; color: var(--g800); text-align: left; cursor: pointer; white-space: nowrap;
+}
+.ctrls .ui-select-trigger { font-weight: 500; }
+.page-size .ui-select-trigger { padding: 4px 8px 4px 10px; }
+.ui-select-trigger:hover { border-color: var(--g400); }
+.ui-select-trigger:focus-visible, .ui-select.open .ui-select-trigger { outline: none; box-shadow: 0 0 0 2px rgba(15,100,104,.35); border-color: var(--teal); }
+.ui-select-value { overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+.ui-select-trigger svg { width: 16px; height: 16px; flex: none; fill: none; stroke: var(--g500); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+.ui-select.open .ui-select-trigger svg { transform: rotate(180deg); }
+.ui-select-pop {
+  position: absolute; z-index: 60; top: calc(100% + 4px); left: 0; min-width: 100%; max-width: 360px;
+  background: #fff; border: 1px solid var(--g200); border-radius: 8px; box-shadow: 0 10px 24px rgba(0,0,0,.10); padding: 4px;
+}
+.ui-select.up .ui-select-pop { top: auto; bottom: calc(100% + 4px); }
+.ui-select-search { width: 100%; margin: 0 0 4px !important; padding: 6px 8px !important; font-size: 13px !important; }
+.ui-select-list { max-height: 264px; overflow-y: auto; }
+.ui-select-opt { display: flex; align-items: center; gap: 8px; padding: 7px 10px 7px 8px; border-radius: 6px; cursor: pointer; font-size: 14px; color: var(--g700); white-space: nowrap; }
+.ui-select-opt svg { width: 14px; height: 14px; flex: none; fill: none; stroke: var(--teal); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; visibility: hidden; }
+.ui-select-opt.on { color: var(--teal); font-weight: 500; }
+.ui-select-opt.on svg { visibility: visible; }
+.ui-select-opt.active, .ui-select-opt:hover { background: var(--teal-row); }
+.ui-select-opt.disabled { color: var(--g400); cursor: default; }
+.btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }

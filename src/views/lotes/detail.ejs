@@ -44,7 +44,7 @@
         <h2>Estado do envio</h2>
         <form method="POST" action="/lotes/<%= batch.id %>/estado" class="actions">
           <% Object.keys(STATUS).forEach(function (k) { %>
-            <button type="submit" name="status" value="<%= k %>" class="btn btn-small<%= batch.status === k ? ' btn-primary' : '' %>"><%= STATUS[k].label %></button>
+            <button type="submit" name="status" value="<%= k %>" <% if (k === 'importado_bigin' && batch.status !== k) { %>data-confirm="Confirma que já importou este ficheiro no Zoho Bigin?" data-confirm-title="Marcar como importado" data-confirm-ok="Marcar"<% } %> class="btn btn-small<%= batch.status === k ? ' btn-primary' : '' %>"><%= STATUS[k].label %></button>
           <% }) %>
           <span class="hint">Marque "Importado no Bigin" depois de importar o ficheiro.</span>
         </form>
