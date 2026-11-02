@@ -10,7 +10,11 @@ if (!connectionString) {
 const pool = new Pool({
   connectionString,
   ssl: process.env.PGSSLMODE === 'disable' ? false : { rejectUnauthorized: false },
-  max: 10,
+  // Poucas ligações e fechadas quando paradas: menos memória na app e no Postgres,
+  // e deixa o Railway adormecer o serviço quando ninguém o usa.
+  max: 5,
+  idleTimeoutMillis: 10000,
+  allowExitOnIdle: false,
 });
 
 pool.on('error', (err) => {

@@ -1,5 +1,4 @@
 const express = require('express');
-const ExcelJS = require('exceljs');
 const { pool } = require('../db');
 
 const router = express.Router();
@@ -276,50 +275,22 @@ router.get('/:id(\\d+)', async (req, res, next) => {
     // Preserva a pesquisa/paginação de onde viemos, para o botão "voltar".
     const backQuery = typeof req.query.back === 'string' ? req.query.back : '';
 
-    return res.render('contacts/detail', { row, groups, title, backQuery });
+    const [{ rows: tags }, { rows: batches }] = await Promise.all([
+      pool.query('SELECT t.id, t.name, t.color FROM contact_tags ct JOIN tags t ON t.id = ct.tag_id WHERE ct.contact_id = $1 ORDER BY t.name', [row.id]),
+      pool.query('SELECT b.id, b.name, b.status, b.created_at FROM export_batch_contacts x JOIN export_batches b ON b.id = x.batch_id WHERE x.contact_id = $1 ORDER BY b.id DESC', [row.id]),
+    ]);
+
+    return res.render('contacts/detail', { row, groups, title, backQuery, tags, batches });
   } catch (err) {
     return next(err);
   }
 });
 
-async function fetchRowsForExport(ids, query) {
-  if (ids && ids.length > 0) {
-    const { rows } = await pool.query('SELECT * FROM contacts WHERE id = ANY($1) AND deleted_at IS NULL', [ids]);
-    return rows;
-  }
-  const { where, values } = buildWhereClause(query);
-  const { rows } = await pool.query(`SELECT * FROM contacts WHERE ${where} ORDER BY id DESC`, values);
-  return rows;
-}
+/*
+ * A exportação antiga (Excel com tudo em memória) foi substituída por lotes:
+ * "Exportar" na lista cria um lote em /lotes/pesquisa, que depois se descarrega
+ * em CSV ou Excel em fio (ver src/lib/export.js).
+ */
 
-router.post('/export', async (req, res, next) => {
-  try {
-    const selectedIds = (req.body.ids || '')
-      .split(',')
-      .map((v) => parseInt(v, 10))
-      .filter((v) => !Number.isNaN(v));
-
-    const rows = await fetchRowsForExport(selectedIds, req.body);
-
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet('Contactos');
-    sheet.columns = LIST_COLUMNS.map((c) => ({ header: c.label, key: c.key, width: 22 }));
-    sheet.getRow(1).font = { bold: true };
-    rows.forEach((r) => sheet.addRow(r));
-
-    await pool.query('INSERT INTO audit_log (user_id, action, details) VALUES ($1, $2, $3)', [
-      req.session.user.id,
-      'export',
-      JSON.stringify({ count: rows.length, selected: selectedIds.length > 0 }),
-    ]);
-
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename="contactos_export_${Date.now()}.xlsx"`);
-    await workbook.xlsx.write(res);
-    res.end();
-  } catch (err) {
-    next(err);
-  }
-});
-
+router.buildWhereClause = buildWhereClause;
 module.exports = router;

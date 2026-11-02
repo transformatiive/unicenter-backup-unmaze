@@ -10,6 +10,16 @@
       <span class="hint">ID interno: <%= row.id %></span>
     </div>
 
+    <section class="card">
+      <h2>Etiquetas e lotes</h2>
+      <div class="actions">
+        <% if (tags.length) { tags.forEach(function (t) { %><span class="pill"><span class="dot" style="background:<%= t.color %>"></span><%= t.name %></span><% }) } else { %><span class="hint">Sem etiquetas.</span><% } %>
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <% if (batches.length) { batches.forEach(function (b) { %><a class="pill n" href="/lotes/<%= b.id %>" style="text-decoration:none">Lote <%= b.id %>: <%= b.name %></a><% }) } else { %><span class="hint">Ainda não saiu em nenhum lote.</span><% } %>
+      </div>
+    </section>
+
     <div class="detail-grid">
       <% groups.forEach(function(group) { %>
         <section class="card detail-card">

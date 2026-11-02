@@ -5,7 +5,7 @@ const { pool } = require('../db');
 const router = express.Router();
 
 router.get('/login', (req, res) => {
-  if (req.session.user) return res.redirect('/contacts');
+  if (req.session.user) return res.redirect('/quadro');
   return res.render('login', { error: null });
 });
 
@@ -55,7 +55,7 @@ router.post('/login', async (req, res) => {
       };
       await pool.query('INSERT INTO audit_log (user_id, action) VALUES ($1, $2)', [user.id, 'login']);
 
-      const dest = req.session.returnTo || '/contacts';
+      const dest = req.session.returnTo || '/quadro';
       delete req.session.returnTo;
 
       if (user.must_change_password) {

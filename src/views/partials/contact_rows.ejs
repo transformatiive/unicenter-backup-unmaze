@@ -1,0 +1,25 @@
+<div class="table-wrap">
+  <table class="table table-hover">
+    <thead><tr><th>Encarregado de educação</th><th>Aluno</th><th>Escola</th><th>Localidade</th><th>Ano</th><th>Telemóvel</th><th>Email</th><th>Etiquetas</th></tr></thead>
+    <tbody>
+      <% rows.forEach(function (r) { %>
+      <tr data-href="/contacts/<%= r.id %>">
+        <td><a class="row-link" href="/contacts/<%= r.id %>"><%= r.nome_de_encarregado_d || '—' %></a></td>
+        <td><%= r.name || '—' %></td>
+        <td><%= r.escola || '—' %></td>
+        <td><%= r.localidade || '—' %></td>
+        <td><%= r.ano_escolar || '—' %></td>
+        <td class="tn"><%= r.telemvel || '—' %></td>
+        <td><%= r.email || '—' %></td>
+        <td><% if (r.tags) { r.tags.split(', ').forEach(function (t) { %><span class="pill"><%= t %></span> <% }) } else { %><span style="color:var(--g400)">—</span><% } %></td>
+      </tr>
+      <% }) %>
+      <% if (rows.length === 0) { %><tr><td colspan="8" class="empty-row">Sem contactos.</td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+<script>
+document.querySelectorAll('tr[data-href]').forEach(function (tr) {
+  tr.addEventListener('click', function (e) { if (!e.target.closest('a,button,input')) window.location = tr.dataset.href; });
+});
+</script>

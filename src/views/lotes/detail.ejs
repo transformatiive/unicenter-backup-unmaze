@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head><%- include('../partials/head') %></head>
+<body>
+  <%- include('../partials/nav') %>
+  <main>
+    <% var st = STATUS[batch.status] || STATUS.criado; var big = batch.contact_count > EXCEL_MAX_ROWS; %>
+    <div class="page-head">
+      <div class="row">
+        <h1>Lote <%= batch.id %> <small><%= batch.name %></small></h1>
+        <a class="btn" href="/lotes">Todos os lotes</a>
+      </div>
+      <p><%= (batch.criteria && batch.criteria.descricao) || '' %></p>
+    </div>
+    <div class="page-body">
+      <% if (novo) { %><div class="alert alert-success">Lote criado com <%= Number(batch.contact_count).toLocaleString('pt-PT') %> contactos. Escolha o formato e descarregue.</div><% } %>
+      <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+      <div class="stats">
+        <div class="card stat"><div class="k">Contactos</div><div class="v"><%= Number(batch.contact_count).toLocaleString('pt-PT') %></div></div>
+        <div class="card stat"><div class="k">Estado</div><div class="v" style="font-size:16px;margin-top:8px"><span class="pill <%= st.cls %>"><%= st.label %></span></div></div>
+        <div class="card stat"><div class="k">Criado</div><div class="v" style="font-size:16px;margin-top:8px"><%= new Date(batch.created_at).toLocaleString('pt-PT', { dateStyle: 'medium', timeStyle: 'short' }) %></div></div>
+        <div class="card stat"><div class="k">Por</div><div class="v" style="font-size:16px;margin-top:8px"><%= batch.username || '—' %></div></div>
+      </div>
+
+      <section class="card">
+        <h2>Descarregar</h2>
+        <form method="GET" action="/lotes/<%= batch.id %>/descarregar" style="display:flex;flex-direction:column;gap:14px;max-width:560px">
+          <div class="choice">
+            <label><input type="radio" name="format" value="csv" checked><b>CSV</b>Sem limite de linhas. Para importar no Zoho Bigin.</label>
+            <label><input type="radio" name="format" value="xlsx" <%= big ? 'disabled' : '' %>><b>Excel</b>Até <%= EXCEL_MAX_ROWS.toLocaleString('pt-PT') %> linhas<%= big ? '. Este lote é maior.' : '.' %></label>
+          </div>
+          <label>Colunas
+            <select name="preset">
+              <% presets.forEach(function (p) { %><option value="<%= p.key %>"><%= p.label %></option><% }) %>
+            </select>
+          </label>
+          <div class="note">O modelo Bigin usa o encarregado de educação como contacto e a escola como empresa. NIF, documentos e data de nascimento só saem no modelo de administrador. Cada descarga fica registada.</div>
+          <div><button type="submit" class="btn btn-primary">Descarregar</button></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Estado do envio</h2>
+        <form method="POST" action="/lotes/<%= batch.id %>/estado" class="actions">
+          <% Object.keys(STATUS).forEach(function (k) { %>
+            <button type="submit" name="status" value="<%= k %>" class="btn btn-small<%= batch.status === k ? ' btn-primary' : '' %>"><%= STATUS[k].label %></button>
+          <% }) %>
+          <span class="hint">Marque "Importado no Bigin" depois de importar o ficheiro.</span>
+        </form>
+      </section>
+
+      <div><a class="btn" href="/lotes/<%= batch.id %>/contactos">Ver os contactos deste lote</a></div>
+    </div>
+  </main>
+</body>
+</html>

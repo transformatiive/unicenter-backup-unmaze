@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head><%- include('../partials/head') %></head>
+<body>
+  <%- include('../partials/nav') %>
+  <main>
+    <div class="page-head">
+      <div class="row"><h1>Lotes de envio <small class="tn"><%= batches.length %></small></h1><a class="btn btn-primary" href="/quadro">Novo lote no quadro</a></div>
+      <p>Cada exportação fica aqui guardada, com a lista exata de contactos. Assim sabemos quem já foi enviado para o Zoho Bigin.</p>
+    </div>
+    <div class="page-body">
+      <div class="table-wrap">
+        <table class="table table-hover">
+          <thead><tr><th>Lote</th><th>Contactos incluídos</th><th class="num">Contactos</th><th>Criado</th><th>Estado</th></tr></thead>
+          <tbody>
+            <% batches.forEach(function (b) { var st = STATUS[b.status] || STATUS.criado; %>
+            <tr data-href="/lotes/<%= b.id %>">
+              <td><a class="row-link" href="/lotes/<%= b.id %>">Lote <%= b.id %></a><div style="color:var(--g700);font-size:13px"><%= b.name %></div></td>
+              <td style="max-width:420px"><%= (b.criteria && b.criteria.descricao) || '—' %></td>
+              <td class="num tn" style="color:var(--g800);font-weight:500"><%= Number(b.contact_count).toLocaleString('pt-PT') %></td>
+              <td style="white-space:nowrap"><%= new Date(b.created_at).toLocaleDateString('pt-PT') %><div style="color:var(--g400);font-size:12px"><%= b.username || '—' %></div></td>
+              <td><span class="pill <%= st.cls %>"><%= st.label %></span></td>
+            </tr>
+            <% }) %>
+            <% if (!batches.length) { %><tr><td colspan="5" class="empty-row">Ainda não há lotes. Crie o primeiro no quadro cruzado.</td></tr><% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <script>
+  document.querySelectorAll('tr[data-href]').forEach(function (tr) {
+    tr.addEventListener('click', function (e) { if (!e.target.closest('a')) window.location = tr.dataset.href; });
+  });
+  </script>
+</body>
+</html>

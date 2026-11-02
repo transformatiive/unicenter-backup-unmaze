@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head><%- include('../partials/head') %></head>
+<body>
+  <%- include('../partials/nav') %>
+  <main>
+    <div class="page-head">
+      <div class="row"><h1>Etiquetas <small class="tn"><%= tags.length %></small></h1></div>
+      <p>Para pôr uma etiqueta em muitos contactos de uma vez, escolha os grupos no quadro cruzado e use "Etiquetar".</p>
+    </div>
+    <div class="page-body">
+      <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+      <% if (message) { %><div class="alert alert-success"><%= message %></div><% } %>
+      <section class="card">
+        <h2>Nova etiqueta</h2>
+        <form method="POST" action="/etiquetas" class="inline-form">
+          <label style="min-width:260px">Nome <input type="text" name="name" maxlength="80" required></label>
+          <label>Cor
+            <select name="color">
+              <% COLORS.forEach(function (c, i) { %><option value="<%= c %>"><%= ['Verde-azulado','Dourado','Azul','Roxo','Rosa','Verde','Laranja','Cinzento'][i] %></option><% }) %>
+            </select>
+          </label>
+          <button type="submit" class="btn btn-primary">Criar</button>
+        </form>
+      </section>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Etiqueta</th><th class="num">Contactos</th><th>Criada</th><th></th></tr></thead>
+          <tbody>
+            <% tags.forEach(function (t) { %>
+            <tr>
+              <td><span class="dot" style="background:<%= t.color %>"></span><span style="color:var(--g800);font-weight:500"><%= t.name %></span></td>
+              <td class="num tn"><%= Number(t.n).toLocaleString('pt-PT') %></td>
+              <td><%= new Date(t.created_at).toLocaleDateString('pt-PT') %> <span style="color:var(--g400)"><%= t.username || '' %></span></td>
+              <td style="text-align:right"><a class="btn btn-small" href="/quadro?tag=<%= t.id %>&excl=0&aut=0">Ver no quadro</a></td>
+            </tr>
+            <% }) %>
+            <% if (!tags.length) { %><tr><td colspan="4" class="empty-row">Ainda não há etiquetas.</td></tr><% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,17 +1,27 @@
-<% if (typeof currentUser !== 'undefined' && currentUser) { %>
-<header class="topbar">
-  <div class="topbar-brand">Unicenter <span>· Backup Unmaze</span></div>
-  <nav class="topbar-nav">
-    <a href="/contacts">Contactos</a>
-    <a href="/gdpr">RGPD</a>
+<% if (typeof currentUser !== 'undefined' && currentUser) {
+  var p = (typeof currentPath !== 'undefined' && currentPath) ? currentPath : '';
+  function on(prefix) { return p === prefix || p.indexOf(prefix + '/') === 0 ? 'on' : ''; }
+%>
+<aside class="side">
+  <a class="side-logo" href="/quadro"><span class="mk">U</span><span>Contactos <b>Unmaze</b></span></a>
+  <nav class="side-nav" aria-label="Menu">
+    <div class="side-sec">Pesquisa</div>
+    <a href="/quadro" class="<%= on('/quadro') %>"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Quadro cruzado</a>
+    <a href="/contacts" class="<%= on('/contacts') %>"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Contactos</a>
+    <div class="side-sec">Envios</div>
+    <a href="/lotes" class="<%= on('/lotes') %>"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg>Lotes de envio</a>
+    <a href="/etiquetas" class="<%= on('/etiquetas') %>"><svg viewBox="0 0 24 24"><path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z"/><circle cx="7.5" cy="7.5" r="1"/></svg>Etiquetas</a>
+    <div class="side-sec">Conta</div>
     <% if (currentUser.is_admin) { %>
-      <a href="/admin/users">Utilizadores</a>
+    <a href="/admin/users" class="<%= on('/admin') %>"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1M19 8v6M22 11h-6"/></svg>Utilizadores</a>
     <% } %>
-    <a href="/change-password">Alterar password</a>
-    <span class="topbar-user"><%= currentUser.username %></span>
-    <form method="POST" action="/logout" style="display:inline">
-      <button type="submit" class="link-button">Sair</button>
-    </form>
+    <a href="/gdpr" class="<%= on('/gdpr') %>"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>RGPD</a>
+    <a href="/change-password" class="<%= on('/change-password') %>"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Alterar password</a>
   </nav>
-</header>
+  <div class="side-user">
+    <span class="av"><%= (currentUser.username || '?').slice(0, 2) %></span>
+    <div class="who"><%= currentUser.username %><small><%= currentUser.is_admin ? 'Administrador' : 'Utilizador' %></small></div>
+    <form method="POST" action="/logout"><button type="submit" class="link-button" title="Terminar sessão">Sair</button></form>
+  </div>
+</aside>
 <% } %>

@@ -12,6 +12,9 @@ const authRoutes = require('./src/routes/auth');
 const contactsRoutes = require('./src/routes/contacts');
 const adminRoutes = require('./src/routes/admin');
 const gdprRoutes = require('./src/routes/gdpr');
+const quadroRoutes = require('./src/routes/quadro');
+const lotesRoutes = require('./src/routes/lotes');
+const etiquetasRoutes = require('./src/routes/etiquetas');
 
 const app = express();
 app.set('trust proxy', 1); // necessário no Railway (atrás de proxy) para cookies "secure"
@@ -21,7 +24,7 @@ app.set('views', path.join(__dirname, 'src', 'views'));
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.json({ limit: '200kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(
@@ -41,6 +44,7 @@ app.use(
 // disponibiliza o utilizador autenticado a todas as views
 app.use((req, res, next) => {
   res.locals.currentUser = req.session.user || null;
+  res.locals.currentPath = req.path;
   next();
 });
 
@@ -48,9 +52,12 @@ app.use('/', authRoutes);
 app.use('/contacts', requireAuth, contactsRoutes);
 app.use('/admin', requireAuth, requireAdmin, adminRoutes);
 app.use('/gdpr', requireAuth, gdprRoutes);
+app.use('/quadro', requireAuth, quadroRoutes);
+app.use('/lotes', requireAuth, lotesRoutes);
+app.use('/etiquetas', requireAuth, etiquetasRoutes);
 
 app.get('/', (req, res) => {
-  if (req.session.user) return res.redirect('/contacts');
+  if (req.session.user) return res.redirect('/quadro');
   return res.redirect('/login');
 });
 

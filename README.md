@@ -65,7 +65,40 @@ está em `migrations/002_contacts.sql`, ajusta essa migração (e a lista `SEARC
 - [x] Login / logout, sessões em Postgres
 - [x] Administração de utilizadores (criar, ativar/desativar, redefinir password)
 - [x] Pesquisa e filtragem de contactos por campos-chave
-- [x] Seleção individual/massiva e exportação para Excel
+- [x] Seleção individual/massiva e exportação (agora sempre por lote de envio)
+- [x] Quadro cruzado: cruzar dois critérios e escolher grupos com um clique
+- [x] Etiquetas, incluindo etiquetar milhares de contactos de uma vez
+- [x] Lotes de envio: CSV sem limite, Excel até 50 000 linhas, modelo Zoho Bigin
 - [ ] Área de eliminação RGPD — **placeholder apenas**, specs a fornecer
 - [ ] Schema de `contacts` a confirmar com o cabeçalho real de `Contactos_Consolidado.csv`
 - [ ] Import dos dados reais para produção (pendente do ponto anterior)
+
+## Quadro cruzado, etiquetas e lotes de envio
+
+- **Quadro cruzado** (`/quadro`): escolhe um critério para as linhas e outro para as colunas
+  (localidade, escola, ano, campanha, estado, canal, código postal, autorização). Mostra os
+  15 e 12 valores mais frequentes; o resto fica em "Outros". Clica em quadrados, linhas ou
+  colunas para montar a seleção.
+- **Etiquetas** (`/etiquetas`): criar etiquetas e aplicá-las em massa a partir do quadro.
+  Não há apagar etiquetas nem contactos (regra: nada de apagar dados).
+- **Lotes de envio** (`/lotes`): cada exportação cria um lote com a lista exata de contactos.
+  Por defeito o quadro esconde quem já saiu num lote, para não enviar duas vezes.
+  Estados: criado, descarregado, importado no Bigin. Cada descarga fica no `audit_log`.
+- **Modelos de colunas**: Zoho Bigin (encarregado de educação = contacto, escola = empresa),
+  lista, todos os campos sem dados sensíveis, e todos com NIF/documentos/nascimento
+  (só administrador).
+
+### A validar com dados reais
+
+- O filtro "Só com autorização de dados" considera autorizado quem tem no campo de
+  autorização `sim`, `s`, `yes`, `true`, `1`, `x` ou texto a começar por `autoriz`
+  (`AUTH_EXPR` em `src/lib/segment.js`). Confirmar com os valores reais antes de enviar.
+
+### Memória
+
+- CSV: o Postgres gera o ficheiro (`COPY ... TO STDOUT`) e a app só o passa ao browser.
+  Teste com 500 000 contactos: 4,7 s, pico de 89 MB.
+- Excel: escritor próprio em fio (`src/lib/xlsx.js`). 44 000 linhas x 84 colunas: pico de 108 MB.
+- Uma exportação de cada vez por utilizador; ligações à base limitadas a 5 e fechadas após 10 s
+  sem uso; `node --max-old-space-size=256`.
+- Sugestão: ativar "App Sleeping" (serverless) no Railway, porque a app é pouco usada.

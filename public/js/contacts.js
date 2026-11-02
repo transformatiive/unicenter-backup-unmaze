@@ -24,7 +24,7 @@ function prepareExport(scope) {
       .call(document.querySelectorAll('.row-check:checked'))
       .map(function (cb) { return cb.value; });
     if (checked.length === 0) {
-      alert('Seleciona pelo menos um registo, ou usa "Exportar todos os resultados filtrados".');
+      alert('Seleciona pelo menos um registo, ou usa "Criar lote com todos os resultados".');
       return false;
     }
     idsField.value = checked.join(',');
