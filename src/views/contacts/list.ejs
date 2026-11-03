@@ -9,7 +9,7 @@
       // Endereço da lista com a pesquisa, filtros e ordem atuais, mudando só o que se pede.
       function url(over) {
         var params = new URLSearchParams();
-        var base = { q: query.q || '', field: query.field || '', sort: sort, dir: dir, pageSize: pageSize, page: page };
+        var base = { q: query.q || '', field: query.field || '', aut: aut ? '1' : '', sort: sort, dir: dir, pageSize: pageSize, page: page };
         Object.keys(filters).forEach(function (k) { base['f_' + k] = filters[k]; });
         Object.keys(over || {}).forEach(function (k) { base[k] = over[k]; });
         Object.keys(base).forEach(function (k) { if (base[k] !== '' && base[k] !== null && base[k] !== undefined) params.set(k, base[k]); });
@@ -36,7 +36,12 @@
       <input type="hidden" name="pageSize" value="<%= pageSize %>">
       <input type="hidden" name="sort" value="<%= sort %>">
       <input type="hidden" name="dir" value="<%= dir %>">
+      <input type="hidden" name="aut" id="autv" value="<%= aut ? '1' : '' %>">
       <button type="submit" class="btn btn-primary">Pesquisar</button>
+      <div class="seg" role="group" aria-label="Que contactos mostrar">
+        <button type="button" class="<%= aut ? '' : 'on' %>" aria-pressed="<%= !aut %>" onclick="document.getElementById('autv').value='';this.form.submit()">Todos</button>
+        <button type="button" class="<%= aut ? 'on' : '' %>" aria-pressed="<%= aut %>" onclick="document.getElementById('autv').value='1';this.form.submit()">Só quem autorizou</button>
+      </div>
       <% if (query.q || nFilters) { %><a href="/contacts?pageSize=<%= pageSize %>" class="btn btn-small">Limpar tudo</a><% } %>
     </form>
 
@@ -48,6 +53,7 @@
         <% } else { %>
           Nenhum registo encontrado
         <% } %>
+        <% if (aut) { %> · só quem autorizou o uso dos dados<% } %>
         <% if (nFilters) { %> · <%= nFilters %> filtro(s) por coluna<% } %>
         · Clique no título de uma coluna para ordenar. Escreva por baixo do título para filtrar e carregue Enter. "(vazio)" mostra os que não têm valor.
       </span>
@@ -56,6 +62,7 @@
         <input type="hidden" name="field" value="<%= query.field || '' %>">
         <input type="hidden" name="sort" value="<%= sort %>">
         <input type="hidden" name="dir" value="<%= dir %>">
+        <% if (aut) { %><input type="hidden" name="aut" value="1"><% } %>
         <% Object.keys(filters).forEach(function (k) { %><input type="hidden" name="f_<%= k %>" value="<%= filters[k] %>"><% }) %>
         <label>Por página
           <select name="pageSize" onchange="this.form.submit()">
@@ -70,6 +77,7 @@
     <form method="POST" action="/lotes/pesquisa" id="export-form" data-total="<%= total %>">
       <input type="hidden" name="q" value="<%= query.q || '' %>">
       <input type="hidden" name="field" value="<%= query.field || '' %>">
+      <% if (aut) { %><input type="hidden" name="aut" value="1"><% } %>
       <% Object.keys(filters).forEach(function (k) { %><input type="hidden" name="f_<%= k %>" value="<%= filters[k] %>"><% }) %>
       <input type="hidden" name="ids" id="export-ids" value="">
 
@@ -166,6 +174,7 @@
         <input type="hidden" name="pageSize" value="<%= pageSize %>">
         <input type="hidden" name="sort" value="<%= sort %>">
         <input type="hidden" name="dir" value="<%= dir %>">
+        <% if (aut) { %><input type="hidden" name="aut" value="1"><% } %>
         <% Object.keys(filters).forEach(function (k) { %><input type="hidden" name="f_<%= k %>" value="<%= filters[k] %>"><% }) %>
         <label>Ir para
           <input type="number" name="page" min="1" max="<%= totalPages %>" value="<%= page %>">
