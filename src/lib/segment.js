@@ -106,6 +106,16 @@ const OTHER_PHONE_SQL = `(SELECT p FROM unnest(${PHONE_ARRAY}) WITH ORDINALITY A
     ORDER BY o LIMIT 1)`;
 const ANY_PHONE = `(${PHONE_COLS.map((k) => `NULLIF(btrim(c.${k}), '') IS NOT NULL`).join(' OR ')})`;
 
+/* Todos os emails de um contacto (EE primeiro), sem repetidos, separados por " · ". */
+const EMAIL_COLS = ['email_ee', 'email', 'email_ee_1'];
+const EMAILS_SQL = `(SELECT string_agg(p, ' · ' ORDER BY o) FROM (
+    SELECT DISTINCT ON (lower(p)) p, o
+      FROM unnest(ARRAY[${EMAIL_COLS.map((k) => `NULLIF(btrim(c.${k}), '')`).join(', ')}]) WITH ORDINALITY AS u(p, o)
+     WHERE p IS NOT NULL
+     ORDER BY lower(p), o) x)`;
+const FIRST_EMAIL_SQL = `coalesce(${EMAIL_COLS.map((k) => `NULLIF(btrim(c.${k}), '')`).join(', ')})`;
+const ANY_EMAIL = `(${FIRST_EMAIL_SQL} IS NOT NULL)`;
+
 // Marcadores especiais nas células (não colidem com valores reais).
 const EMPTY = '__vazio__';
 const OTHERS = '__outros__';
@@ -354,6 +364,10 @@ module.exports = {
   PHONE_COLS,
   PHONES_SQL,
   ANY_PHONE,
+  EMAIL_COLS,
+  EMAILS_SQL,
+  FIRST_EMAIL_SQL,
+  ANY_EMAIL,
   MOBILE_SQL,
   OTHER_PHONE_SQL,
   prettify,

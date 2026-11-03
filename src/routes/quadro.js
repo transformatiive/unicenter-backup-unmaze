@@ -82,7 +82,7 @@ router.post('/contar', async (req, res, next) => {
     if (!where) return res.json({ count: 0 });
     const { rows } = await pool.query(
       `SELECT count(*)::int AS count,
-              count(*) FILTER (WHERE coalesce(NULLIF(btrim(c.email_ee),''), NULLIF(btrim(c.email),'')) IS NOT NULL)::int AS email,
+              count(*) FILTER (WHERE ${seg.ANY_EMAIL})::int AS email,
               count(*) FILTER (WHERE ${seg.ANY_PHONE})::int AS tel,
               count(*) FILTER (WHERE EXISTS (SELECT 1 FROM contact_tags ct WHERE ct.contact_id = c.id))::int AS tagged
          FROM contacts c WHERE ${where}`,
@@ -154,7 +154,7 @@ router.get('/contactos', async (req, res, next) => {
     const page = Math.min(Math.max(1, parseInt(req.query.page, 10) || 1), totalPages);
     const { rows } = await pool.query(
       `SELECT c.id, c.name, c.nome_de_encarregado_d, c.escola, c.localidade, c.ano_escolar, c.campanha_actual,
-              ${seg.PHONES_SQL} AS telefones, coalesce(NULLIF(btrim(c.email_ee),''), c.email) AS email,
+              ${seg.PHONES_SQL} AS telefones, ${seg.EMAILS_SQL} AS email,
               (SELECT string_agg(t.name, ', ' ORDER BY t.name) FROM contact_tags ct JOIN tags t ON t.id = ct.tag_id WHERE ct.contact_id = c.id) AS tags
          FROM contacts c WHERE ${where}
         ORDER BY c.id LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,
