@@ -292,3 +292,10 @@ select.ui-native { position: absolute !important; width: 1px !important; height:
 .table .filter-row input[type=text] { margin: 0; padding: 5px 8px; font-size: 13px; min-width: 90px; width: 100%; }
 .table .filter-row input.has-value { border-color: var(--teal); background: #F0F7F7; }
 .table .filter-row .ui-select-trigger { padding: 5px 8px; font-size: 13px; }
+
+/* ---------- botão de dois lados (Todos / Só quem autorizou) ---------- */
+.seg { display: inline-flex; border: 1px solid var(--g300); border-radius: 8px; overflow: hidden; background: #fff; }
+.seg button { border: 0; background: transparent; padding: 7px 12px; font: inherit; font-size: 13px; color: var(--g600); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--g300); }
+.seg button.on { background: var(--teal); color: #fff; font-weight: 600; }
+.seg button:not(.on):hover { background: var(--g50); }

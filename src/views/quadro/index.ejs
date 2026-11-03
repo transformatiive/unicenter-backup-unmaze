@@ -38,8 +38,12 @@
           <option value="">Todas</option>
           <% tags.forEach(function (t) { %><option value="<%= t.id %>" <%= crit.tag === t.id ? 'selected' : '' %>><%= t.name %></option><% }) %>
         </select>
-        <input type="hidden" name="aut" value="0">
-        <label class="switch"><input type="checkbox" name="aut" value="1" <%= crit.aut ? 'checked' : '' %> onchange="this.form.submit()"> Só com autorização de dados</label>
+        <span class="lbl">Mostrar</span>
+        <input type="hidden" name="aut" id="autv" value="<%= crit.aut ? '1' : '0' %>">
+        <div class="seg" role="group" aria-label="Que contactos mostrar">
+          <button type="button" class="<%= crit.aut ? 'on' : '' %>" aria-pressed="<%= crit.aut %>" onclick="document.getElementById('autv').value='1';this.form.submit()">Só quem autorizou</button>
+          <button type="button" class="<%= crit.aut ? '' : 'on' %>" aria-pressed="<%= !crit.aut %>" onclick="document.getElementById('autv').value='0';this.form.submit()">Todos</button>
+        </div>
         <input type="hidden" name="excl" value="0">
         <label class="switch"><input type="checkbox" name="excl" value="1" <%= crit.excl ? 'checked' : '' %> onchange="this.form.submit()"> Esconder quem já saiu num lote</label>
       </div>
@@ -66,12 +70,12 @@
         <div class="card stat"><div class="k">Com telefone</div><div class="v" id="st2">–</div><div class="bar"><i id="st2b" style="width:0"></i></div></div>
         <div class="card stat"><div class="k">Com etiqueta</div><div class="v" id="st3">–</div><div class="bar"><i id="st3b" style="width:0"></i></div></div>
       </div>
-      <% var fl = []; if (crit.aut) fl.push('<b>Só com autorização de dados</b>: entram só os registos em que o campo "Autorização de uso dos dados" diz sim (Sim, S, Yes, X, 1 ou um texto que começa por "Autoriz").'); if (crit.excl) fl.push('<b>Esconder quem já saiu num lote</b>: não entram os registos que já foram exportados num lote de envio.'); if (crit.camp) fl.push('<b>Campanha</b>: só a campanha escolhida.'); if (crit.tag) fl.push('<b>Etiqueta</b>: só os registos com a etiqueta escolhida.'); %>
+      <% var fl = []; if (crit.aut) fl.push('<b>Só quem autorizou</b>: entram só os registos em que o campo "Autorização de uso dos dados" diz que sim (no Unmaze, o valor 1). Carregue em "Todos" para ver toda a gente.'); if (crit.excl) fl.push('<b>Esconder quem já saiu num lote</b>: não entram os registos que já foram exportados num lote de envio.'); if (crit.camp) fl.push('<b>Campanha</b>: só a campanha escolhida.'); if (crit.tag) fl.push('<b>Etiqueta</b>: só os registos com a etiqueta escolhida.'); %>
       <% if (fl.length && matrix.total < allTotal) { %>
       <div class="alert" style="background:var(--g50);border:1px solid var(--g200);color:var(--g600)">
         <strong>Porque aparecem <%= n(matrix.total) %> e não <%= n(allTotal) %>?</strong> Estão ligados estes filtros:
         <ul style="margin:6px 0 0;padding-left:18px"><% fl.forEach(function (t) { %><li><%- t %></li><% }) %></ul>
-        <div style="margin-top:6px">Desligue os interruptores no topo para ver todos os registos.</div>
+        <div style="margin-top:6px">Para ver todos os registos, carregue em "Todos" e desligue o interruptor no topo.</div>
       </div>
       <% } %>
       <div class="card flush">

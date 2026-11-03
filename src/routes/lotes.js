@@ -130,7 +130,7 @@ router.post('/pesquisa', async (req, res, next) => {
       params = built.values;
       const fx = Object.keys(req.body).filter((k) => /^f_/.test(k) && String(req.body[k]).trim())
         .map((k) => `${k.slice(2)}="${String(req.body[k]).trim().slice(0, 40)}"`);
-      descricao = [req.body.q ? `Pesquisa: "${String(req.body.q).slice(0, 80)}"` : '', fx.length ? `Filtros: ${fx.join(', ')}` : '']
+      descricao = [req.body.q ? `Pesquisa: "${String(req.body.q).slice(0, 80)}"` : '', req.body.aut === '1' ? 'Só quem autorizou' : '', fx.length ? `Filtros: ${fx.join(', ')}` : '']
         .filter(Boolean).join(' · ') || 'Todos os contactos';
     }
     const name = String(req.body.name || '').trim().slice(0, 120) || descricao;

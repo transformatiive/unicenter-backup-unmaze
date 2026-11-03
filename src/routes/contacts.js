@@ -226,6 +226,8 @@ function buildWhereClause(query) {
     clauses.push(`(${orParts.join(' OR ')})`);
   }
 
+  if (query.aut === '1') clauses.push(seg.AUTH_EXPR);
+
   const filters = columnFilters(query);
   Object.keys(filters).forEach((key) => {
     const col = COL_BY_KEY[key];
@@ -297,6 +299,7 @@ router.get('/', async (req, res, next) => {
       searchableFields: SEARCHABLE_FIELDS,
       query: req.query,
       filters,
+      aut: req.query.aut === '1',
       sort: order.sort,
       dir: order.dir,
       total,
