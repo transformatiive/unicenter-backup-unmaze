@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head><%- include('../partials/head') %></head>
+<body>
+  <%- include('../partials/nav') %>
+  <main>
+    <% function n(v) { return Number(v || 0).toLocaleString('pt-PT'); } %>
+    <div class="page-head">
+      <div class="row">
+        <h1><%= dim.label %>: todos os grupos <small class="tn"><%= n(groups.length) %> grupos · <%= n(total) %> registos</small></h1>
+        <a class="btn" href="<%= back %>">Voltar ao quadro</a>
+      </div>
+      <p>Cada grupo junta as formas escritas que são o mesmo nome (maiúsculas, acentos, pontuação e abreviaturas). Os grupos marcados "Outros" são os que não cabem no quadro. Os números usam os mesmos filtros do quadro.</p>
+    </div>
+    <div class="page-body">
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Grupo</th><th>No quadro</th><th style="text-align:right">Registos</th><th>Formas escritas juntadas (registos)</th></tr></thead>
+          <tbody>
+            <% groups.forEach(function (g) { %>
+            <tr>
+              <td><strong><%= g.label %></strong></td>
+              <td><%= top.has(g.v) ? 'Sim' : 'Outros' %></td>
+              <td class="tn" style="text-align:right"><%= n(g.n) %></td>
+              <td><% g.variants.slice(0, 12).forEach(function (x, i) { %><%= i ? ' · ' : '' %><%= x.t %> (<%= n(x.n) %>)<% }) %><% if (g.variants.length > 12) { %> · e mais <%= g.variants.length - 12 %> formas<% } %></td>
+            </tr>
+            <% }) %>
+            <% if (!groups.length) { %><tr><td colspan="4" class="empty-row">Sem registos com estes filtros.</td></tr><% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

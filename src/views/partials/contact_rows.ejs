@@ -1,6 +1,6 @@
 <div class="table-wrap">
   <table class="table table-hover">
-    <thead><tr><th>Encarregado de educação</th><th>Aluno</th><th>Escola</th><th>Localidade</th><th>Ano</th><th>Telemóvel</th><th>Email</th><th>Etiquetas</th></tr></thead>
+    <thead><tr><th>Encarregado de educação</th><th>Aluno</th><th>Escola</th><th>Localidade</th><th>Ano</th><th>Telefones</th><th>Email</th><th>Etiquetas</th></tr></thead>
     <tbody>
       <% rows.forEach(function (r) { %>
       <tr data-href="/contacts/<%= r.id %>">
@@ -9,7 +9,7 @@
         <td><%= r.escola || '—' %></td>
         <td><%= r.localidade || '—' %></td>
         <td><%= r.ano_escolar || '—' %></td>
-        <td class="tn"><%= r.telemvel || '—' %></td>
+        <td class="tn"><%= r.telefones || r.telemvel || '—' %></td>
         <td><%= r.email || '—' %></td>
         <td><% if (r.tags) { r.tags.split(', ').forEach(function (t) { %><span class="pill"><%= t %></span> <% }) } else { %><span style="color:var(--g400)">—</span><% } %></td>
       </tr>
