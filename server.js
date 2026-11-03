@@ -11,6 +11,7 @@ const { requireAuth, requireAdmin } = require('./src/middleware/auth');
 const authRoutes = require('./src/routes/auth');
 const contactsRoutes = require('./src/routes/contacts');
 const adminRoutes = require('./src/routes/admin');
+const verificacao = require('./src/lib/verificacao');
 const gdprRoutes = require('./src/routes/gdpr');
 const quadroRoutes = require('./src/routes/quadro');
 const lotesRoutes = require('./src/routes/lotes');
@@ -133,10 +134,11 @@ bootstrap()
             count(*) FILTER (WHERE deleted_at IS NOT NULL)::int AS apagadas,
             count(DISTINCT chavealunounmaze)::int AS chaves_distintas,
             count(DISTINCT chavealuno)::int AS alunos_distintos,
-            ${['telemvel', 'telefone', 'telefone_1', 'telefone_2', 'telefone_3', 'phone_number', 'polo', 'localidade', 'escola', 'ano_escolar', 'email', 'email_ee', 'nome_de_encarregado_d']
+            ${['telemvel', 'telefone', 'telefone_1', 'telefone_2', 'telefone_3', 'phone_number', 'polo', 'localidade', 'escola', 'ano_escolar', 'email', 'email_ee', 'nome_de_encarregado_d', 'autorizao_uso_dos_dad']
     .map((k) => `count(*) FILTER (WHERE NULLIF(btrim(${k}), '') IS NOT NULL)::int AS ${k}`).join(', ')}
             FROM contacts`))
         .then(({ rows }) => console.log('[server] resumo contacts:', JSON.stringify(rows[0])))
-        .catch((err) => console.warn('[server] VACUUM contacts falhou:', err.message));
+        .then(() => verificacao.runIfDue())
+        .catch((err) => console.warn('[server] tarefas de arranque falharam:', err.message));
     });
   });
