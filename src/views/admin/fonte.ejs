@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <%- include('../partials/head') %>
+  <% var running = (comp && comp.estado === 'a_calcular') || runs.some(function (r) { return r.estado === 'a_correr'; }); %>
+  <% if (running) { %><meta http-equiv="refresh" content="15"><% } %>
+</head>
+<body>
+  <%- include('../partials/nav') %>
+  <main>
+    <%
+      function n(v) { return Number(v || 0).toLocaleString('pt-PT'); }
+      function when(d) { return d ? new Date(d).toLocaleString('pt-PT', { timeZone: 'Europe/Lisbon' }) : '—'; }
+      var totalLoaded = loaded.reduce(function (a, x) { return a + x.n; }, 0);
+      var r = comp && comp.estado === 'pronto' ? comp.resultado : null;
+    %>
+    <div class="page-head">
+      <div class="row"><h1>Ficheiros originais Unmaze</h1></div>
+      <p>Compare a base de dados com os ficheiros originais e preencha os campos que estão vazios. Nada é apagado e nenhum valor que já existe é substituído.</p>
+    </div>
+    <div class="page-body">
+      <% if (msg) { %><div class="alert alert-success"><%= msg %></div><% } %>
+      <% if (err) { %><div class="alert alert-error"><%= err %></div><% } %>
+
+      <section class="card">
+        <h2>1. Carregar os ficheiros</h2>
+        <p class="hint">Carregue um de cada vez os ficheiros "Contactos_UNMAZE_Geral_part_1.csv" a "part_4.csv". Pode demorar alguns minutos por ficheiro. Carregar o mesmo ficheiro duas vezes não duplica nada.</p>
+        <form method="POST" action="/admin/fonte/carregar" enctype="multipart/form-data" class="inline-form" id="fUp">
+          <label class="btn" style="cursor:pointer">
+            <input type="file" name="ficheiro" accept=".csv,text/csv" required style="position:absolute;opacity:0;width:1px;height:1px" id="fFile">
+            <span id="fName">Escolher ficheiro CSV</span>
+          </label>
+          <button type="submit" class="btn btn-primary" id="fBtn">Carregar</button>
+        </form>
+        <div class="table-wrap" style="margin-top:14px">
+          <table class="table">
+            <thead><tr><th>Ficheiro</th><th class="num">Linhas carregadas</th><th>Quando</th></tr></thead>
+            <tbody>
+              <% loaded.forEach(function (x) { %><tr><td><%= x.ficheiro %></td><td class="num tn"><%= n(x.n) %></td><td><%= when(x.em) %></td></tr><% }) %>
+              <% if (!loaded.length) { %><tr><td colspan="3" class="empty-row">Ainda nenhum ficheiro carregado.</td></tr><% } %>
+            </tbody>
+            <% if (loaded.length) { %><tfoot><tr><td><strong>Total</strong></td><td class="num tn"><strong><%= n(totalLoaded) %></strong></td><td></td></tr></tfoot><% } %>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="row" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <h2 style="margin:0">2. Comparar com a base de dados</h2>
+          <form method="POST" action="/admin/fonte/comparar"><button type="submit" class="btn btn-primary" <%= !loaded.length || (comp && comp.estado === 'a_calcular') ? 'disabled' : '' %>>Comparar agora</button></form>
+        </div>
+        <% if (!comp) { %>
+          <p class="hint">Ainda não foi feita nenhuma comparação.</p>
+        <% } else if (comp.estado === 'a_calcular') { %>
+          <p class="hint">A calcular desde <%= when(comp.criado_em) %>. Pode demorar alguns minutos. Esta página atualiza sozinha.</p>
+        <% } else if (comp.estado === 'erro') { %>
+          <div class="alert alert-error">A comparação de <%= when(comp.criado_em) %> falhou: <%= comp.erro %></div>
+        <% } else { %>
+          <p class="hint">Comparação de <%= when(comp.terminado_em) %>. O ficheiro e a base de dados ligam-se pela "Chave Unmaze" de cada registo.</p>
+          <div class="stats" style="margin:12px 0">
+            <div class="card stat"><div class="k">Linhas nos ficheiros</div><div class="v"><%= n(r.ficheiro) %></div></div>
+            <div class="card stat"><div class="k">Linhas na base de dados</div><div class="v"><%= n(r.base) %></div><div class="k" style="margin-top:8px"><%= n(r.base_apagados) %> marcadas como apagadas (não contam)</div></div>
+            <div class="card stat"><div class="k">Encontradas nos dois</div><div class="v"><%= n(r.ligados) %></div></div>
+            <div class="card stat"><div class="k">Só nos ficheiros / só na base</div><div class="v"><%= n(r.so_ficheiro) %> / <%= n(r.so_base) %></div><div class="k" style="margin-top:8px"><%= n(r.chaves_repetidas_base) %> chaves repetidas na base</div></div>
+          </div>
+          <div class="card" style="background:var(--g50)">
+            <h3 style="margin-top:0">Telefones</h3>
+            <ul style="margin:0;padding-left:18px">
+              <li><strong><%= n(r.telefones.com_numeros_em_falta) %></strong> registos têm no ficheiro pelo menos um número que não está em nenhum campo de telefone da base de dados.</li>
+              <li>Registos com 2 ou mais números diferentes: <strong><%= n(r.telefones.ficheiro_2_ou_mais) %></strong> no ficheiro, <strong><%= n(r.telefones.base_2_ou_mais) %></strong> na base de dados.</li>
+              <% if (r.telefones.exemplos && r.telefones.exemplos.length) { %><li>Exemplos: <% r.telefones.exemplos.forEach(function (id, i) { %><%= i ? ', ' : '' %><a href="/contacts/<%= id %>"><%= id %></a><% }) %></li><% } %>
+            </ul>
+          </div>
+
+          <form method="POST" action="/admin/fonte/preencher" id="fFill">
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr>
+                  <th>Preencher</th><th>Campo</th>
+                  <th class="num">Vazio na base, cheio no ficheiro</th>
+                  <th class="num">Diferentes</th>
+                  <th class="num">Iguais</th>
+                  <th class="num">Vazio no ficheiro, cheio na base</th>
+                  <th>Exemplos de diferentes</th>
+                </tr></thead>
+                <tbody>
+                  <% r.colunas.forEach(function (c) { var canFill = c.faltaBase > 0 && c.col !== 'chavealunounmaze'; %>
+                  <tr>
+                    <td><% if (canFill) { %><input type="checkbox" name="cols" value="<%= c.col %>" checked><% } %></td>
+                    <td><%= c.label %></td>
+                    <td class="num tn"><% if (c.faltaBase) { %><strong><%= n(c.faltaBase) %></strong><% } else { %>0<% } %></td>
+                    <td class="num tn"><%= n(c.diferente) %></td>
+                    <td class="num tn"><%= n(c.igual) %></td>
+                    <td class="num tn"><%= n(c.faltaFicheiro) %></td>
+                    <td><% (c.exemplos || []).forEach(function (id, i) { %><%= i ? ', ' : '' %><a href="/contacts/<%= id %>"><%= id %></a><% }) %></td>
+                  </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+            <div class="card" style="margin-top:16px">
+              <h3 style="margin-top:0">3. Preencher os campos vazios</h3>
+              <p class="hint">Só os campos assinalados. Só onde a base de dados está vazia e o ficheiro tem valor. Valores diferentes não são mudados. Fica registado que campo de que contacto foi preenchido.</p>
+              <div class="inline-form">
+                <label>Escreva PREENCHER para confirmar <input type="text" name="confirm" autocomplete="off" required></label>
+                <button type="submit" class="btn btn-primary" <%= running ? 'disabled' : '' %>>Preencher campos vazios</button>
+              </div>
+            </div>
+          </form>
+        <% } %>
+      </section>
+
+      <% if (runs.length) { %>
+      <section class="card">
+        <h2>Preenchimentos feitos</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Quando</th><th>Quem</th><th>Estado</th><th class="num">Campos preenchidos</th><th class="num">Contactos</th></tr></thead>
+            <tbody>
+              <% runs.forEach(function (x) { %>
+              <tr><td><%= when(x.criado_em) %></td><td><%= x.username || '—' %></td>
+                <td><%= x.estado === 'pronto' ? 'Concluído' : x.estado === 'erro' ? 'Falhou: ' + x.erro : 'A correr' %></td>
+                <td class="num tn"><%= n(x.campos) %></td><td class="num tn"><%= n(x.contactos) %></td></tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <% } %>
+    </div>
+  </main>
+  <script>
+    (function () {
+      var f = document.getElementById('fFile');
+      if (f) f.addEventListener('change', function () { document.getElementById('fName').textContent = f.files[0] ? f.files[0].name : 'Escolher ficheiro CSV'; });
+      var up = document.getElementById('fUp');
+      if (up) up.addEventListener('submit', function () { var b = document.getElementById('fBtn'); b.disabled = true; b.textContent = 'A carregar… não feche esta página'; });
+    })();
+  </script>
+</body>
+</html>

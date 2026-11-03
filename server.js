@@ -11,6 +11,7 @@ const { requireAuth, requireAdmin } = require('./src/middleware/auth');
 const authRoutes = require('./src/routes/auth');
 const contactsRoutes = require('./src/routes/contacts');
 const adminRoutes = require('./src/routes/admin');
+const fonteRoutes = require('./src/routes/fonte');
 const gdprRoutes = require('./src/routes/gdpr');
 const quadroRoutes = require('./src/routes/quadro');
 const lotesRoutes = require('./src/routes/lotes');
@@ -50,6 +51,7 @@ app.use((req, res, next) => {
 
 app.use('/', authRoutes);
 app.use('/contacts', requireAuth, contactsRoutes);
+app.use('/admin/fonte', requireAuth, requireAdmin, fonteRoutes);
 app.use('/admin', requireAuth, requireAdmin, adminRoutes);
 app.use('/gdpr', requireAuth, gdprRoutes);
 app.use('/quadro', requireAuth, quadroRoutes);
