@@ -57,11 +57,23 @@
     <div class="page-body">
       <% if (msg) { %><div class="alert alert-success"><%= msg %></div><% } %>
       <div class="stats" id="stats">
-        <div class="card stat"><div class="k" id="st0k">No quadro</div><div class="v" id="st0"><%= n(matrix.total) %></div><div class="k" style="margin-top:10px" id="st0s">Escolha grupos para ver o detalhe</div></div>
+        <div class="card stat"><div class="k" id="st0k">No quadro</div><div class="v" id="st0"><%= n(matrix.total) %></div>
+          <div class="k" style="margin-top:6px">de <%= n(allTotal) %> registos na base de dados</div>
+          <% var why = []; if (crit.aut) why.push('só quem autorizou o uso dos dados'); if (crit.excl) why.push('sem quem já saiu num lote'); if (crit.camp) why.push('só a campanha escolhida'); if (crit.tag) why.push('só a etiqueta escolhida'); %>
+          <% if (why.length && matrix.total < allTotal) { %><div class="k" style="margin-top:4px;color:var(--teal)">Motivo: <%= why.join('; ') %> (ver explicação abaixo)</div><% } %>
+          <div class="k" style="margin-top:10px" id="st0s">Escolha grupos para ver o detalhe</div></div>
         <div class="card stat"><div class="k">Com email</div><div class="v" id="st1">–</div><div class="bar"><i id="st1b" style="width:0"></i></div></div>
         <div class="card stat"><div class="k">Com telefone</div><div class="v" id="st2">–</div><div class="bar"><i id="st2b" style="width:0"></i></div></div>
         <div class="card stat"><div class="k">Com etiqueta</div><div class="v" id="st3">–</div><div class="bar"><i id="st3b" style="width:0"></i></div></div>
       </div>
+      <% var fl = []; if (crit.aut) fl.push('<b>Só com autorização de dados</b>: entram só os registos em que o campo "Autorização de uso dos dados" diz sim (Sim, S, Yes, X, 1 ou um texto que começa por "Autoriz").'); if (crit.excl) fl.push('<b>Esconder quem já saiu num lote</b>: não entram os registos que já foram exportados num lote de envio.'); if (crit.camp) fl.push('<b>Campanha</b>: só a campanha escolhida.'); if (crit.tag) fl.push('<b>Etiqueta</b>: só os registos com a etiqueta escolhida.'); %>
+      <% if (fl.length && matrix.total < allTotal) { %>
+      <div class="alert" style="background:var(--g50);border:1px solid var(--g200);color:var(--g600)">
+        <strong>Porque aparecem <%= n(matrix.total) %> e não <%= n(allTotal) %>?</strong> Estão ligados estes filtros:
+        <ul style="margin:6px 0 0;padding-left:18px"><% fl.forEach(function (t) { %><li><%- t %></li><% }) %></ul>
+        <div style="margin-top:6px">Desligue os interruptores no topo para ver todos os registos.</div>
+      </div>
+      <% } %>
       <div class="card flush">
         <div class="card-head"><div><h2><%= dims[crit.r].label %> × <%= dims[crit.c].label %></h2>
           <p>Cada número é o número de registos (linhas) da base de dados nesse par, com os filtros acima. Um aluno com dois registos conta duas vezes. Nomes escritos de formas diferentes (maiúsculas, acentos, abreviaturas como "V.N.Gaia") contam como um só.</p>
