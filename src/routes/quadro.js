@@ -40,11 +40,36 @@ router.get('/', async (req, res, next) => {
       dims: seg.DIMENSIONS,
       EMPTY: seg.EMPTY,
       OTHERS: seg.OTHERS,
-      valueLabel: seg.valueLabel,
+      valueLabel: (v) => seg.valueLabel(v, matrix.labels),
+      qs: new URLSearchParams({ r: crit.r, c: crit.c, camp: crit.camp, tag: crit.tag || '', aut: crit.aut ? '1' : '0', excl: crit.excl ? '1' : '0' }).toString(),
       msg: typeof req.query.msg === 'string' ? req.query.msg : null,
     });
   } catch (err) {
     next(err);
+  }
+});
+
+/*
+ * Todos os grupos de um eixo (linhas ou colunas), incluindo os que ficam em
+ * "Outros", com as formas escritas que foram juntadas em cada grupo.
+ */
+router.get('/grupos', async (req, res, next) => {
+  try {
+    const crit = seg.parseCriteria(req.query);
+    const d = req.query.d === 'c' ? crit.c : crit.r;
+    const key = `groups:${JSON.stringify([d, crit.r, crit.c, crit.camp, crit.tag, crit.aut, crit.excl])}`;
+    const [groups, matrix] = await Promise.all([
+      cache.remember(key, 60, () => seg.allGroups(pool, d, crit)),
+      cache.remember(`matrix:${JSON.stringify([crit.r, crit.c, crit.camp, crit.tag, crit.aut, crit.excl])}`, 60, () => seg.buildMatrix(pool, crit)),
+    ]);
+    const top = new Set(d === crit.r ? matrix.rTop : matrix.cTop);
+    const total = groups.reduce((a, g) => a + g.n, 0);
+    return res.render('quadro/grupos', {
+      groups, top, total, dim: seg.DIMENSIONS[d], crit,
+      back: `/quadro?${new URLSearchParams({ r: crit.r, c: crit.c, camp: crit.camp, tag: crit.tag || '', aut: crit.aut ? '1' : '0', excl: crit.excl ? '1' : '0' })}`,
+    });
+  } catch (err) {
+    return next(err);
   }
 });
 
@@ -58,7 +83,7 @@ router.post('/contar', async (req, res, next) => {
     const { rows } = await pool.query(
       `SELECT count(*)::int AS count,
               count(*) FILTER (WHERE coalesce(NULLIF(btrim(c.email_ee),''), NULLIF(btrim(c.email),'')) IS NOT NULL)::int AS email,
-              count(*) FILTER (WHERE NULLIF(btrim(c.telemvel),'') IS NOT NULL)::int AS tel,
+              count(*) FILTER (WHERE ${seg.ANY_PHONE})::int AS tel,
               count(*) FILTER (WHERE EXISTS (SELECT 1 FROM contact_tags ct WHERE ct.contact_id = c.id))::int AS tagged
          FROM contacts c WHERE ${where}`,
       params,
@@ -129,7 +154,7 @@ router.get('/contactos', async (req, res, next) => {
     const page = Math.min(Math.max(1, parseInt(req.query.page, 10) || 1), totalPages);
     const { rows } = await pool.query(
       `SELECT c.id, c.name, c.nome_de_encarregado_d, c.escola, c.localidade, c.ano_escolar, c.campanha_actual,
-              c.telemvel, coalesce(NULLIF(btrim(c.email_ee),''), c.email) AS email,
+              ${seg.PHONES_SQL} AS telefones, coalesce(NULLIF(btrim(c.email_ee),''), c.email) AS email,
               (SELECT string_agg(t.name, ', ' ORDER BY t.name) FROM contact_tags ct JOIN tags t ON t.id = ct.tag_id WHERE ct.contact_id = c.id) AS tags
          FROM contacts c WHERE ${where}
         ORDER BY c.id LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,

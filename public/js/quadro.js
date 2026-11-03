@@ -11,7 +11,7 @@
   function label(v) {
     if (v === '__vazio__') return '(vazio)';
     if (v === '__outros__') return 'Outros';
-    return v;
+    return (data.labels && data.labels[v]) || v;
   }
 
   function criteria() {

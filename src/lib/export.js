@@ -14,6 +14,7 @@ const { to: copyTo } = require('pg-copy-streams');
 const { parse } = require('csv-parse');
 const { writeXlsx } = require('./xlsx');
 const { pool } = require('../db');
+const seg = require('./segment');
 
 const EXCEL_MAX_ROWS = 50000;
 
@@ -31,7 +32,9 @@ const INTERNAL = new Set(['deleted_at', 'deleted_reason']);
 const LIST_COLUMNS = [
   ['id', 'ID'], ['chavealunounmaze', 'Chave Unmaze'], ['name', 'Nome'], ['escola', 'Escola'],
   ['ano_escolar', 'Ano'], ['turma_1', 'Turma'], ['nome_de_encarregado_d', 'Encarregado de Educação'],
-  ['telefone', 'Telefone'], ['telemvel', 'Telemóvel'], ['email', 'Email'], ['email_ee', 'Email do EE'],
+  ['telefone', 'Telefone'], ['telemvel', 'Telemóvel'], ['telefone_1', 'Telefone 1'], ['telefone_2', 'Telefone 2'],
+  ['telefone_3', 'Telefone 3'], ['phone_number', 'Telefone (phone_number)'], ['email', 'Email'], ['email_ee', 'Email do EE'],
+  ['polo', 'Polo'],
   ['localidade', 'Localidade'], ['cod_postal', 'Cód. Postal'], ['campanha_actual', 'Campanha'],
   ['status_name', 'Estado'],
 ];
@@ -49,13 +52,13 @@ const BIGIN_SELECT = [
   `CASE WHEN btrim(coalesce(c.nome_de_encarregado_d,'')) ~ '\\s' THEN split_part(btrim(c.nome_de_encarregado_d), ' ', 1) ELSE '' END AS ${q('First Name')}`,
   `CASE WHEN btrim(coalesce(c.nome_de_encarregado_d,'')) ~ '\\s' THEN regexp_replace(btrim(c.nome_de_encarregado_d), '^\\S+\\s+', '') ELSE coalesce(NULLIF(btrim(c.nome_de_encarregado_d),''), NULLIF(btrim(c.name),''), 'Sem nome') END AS ${q('Last Name')}`,
   `coalesce(NULLIF(btrim(c.email_ee),''), NULLIF(btrim(c.email),'')) AS ${q('Email')}`,
-  `NULLIF(btrim(c.telemvel),'') AS ${q('Mobile')}`,
-  `coalesce(NULLIF(btrim(c.telefone),''), NULLIF(btrim(c.phone_number),'')) AS ${q('Phone')}`,
+  `${seg.MOBILE_SQL} AS ${q('Mobile')}`,
+  `${seg.OTHER_PHONE_SQL} AS ${q('Phone')}`,
   `NULLIF(btrim(c.escola),'') AS ${q('Account Name')}`,
   `NULLIF(btrim(c.rua),'') AS ${q('Mailing Street')}`,
-  `NULLIF(btrim(c.localidade),'') AS ${q('Mailing City')}`,
+  `coalesce(NULLIF(btrim(c.localidade),''), NULLIF(btrim(c.polo),'')) AS ${q('Mailing City')}`,
   `NULLIF(btrim(c.cod_postal),'') AS ${q('Mailing Zip')}`,
-  `'Educando: ' || coalesce(NULLIF(btrim(c.name),''), '-') || ' | Ano: ' || coalesce(NULLIF(btrim(c.ano_escolar),''), '-') || ' | Campanha: ' || coalesce(NULLIF(btrim(c.campanha_actual),''), '-') AS ${q('Description')}`,
+  `'Educando: ' || coalesce(NULLIF(btrim(c.name),''), '-') || ' | Ano: ' || coalesce(NULLIF(btrim(c.ano_escolar),''), '-') || ' | Campanha: ' || coalesce(NULLIF(btrim(c.campanha_actual),''), '-') || ' | Telefones: ' || coalesce(${seg.PHONES_SQL}, '-') AS ${q('Description')}`,
   `${TAGS_EXPR} AS ${q('Tag')}`,
   `c.chavealunounmaze AS ${q('Chave Unmaze')}`,
 ].join(',\n  ');

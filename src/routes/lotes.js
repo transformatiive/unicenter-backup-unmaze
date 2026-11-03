@@ -179,7 +179,7 @@ router.get('/:id(\\d+)/contactos', async (req, res, next) => {
     const page = Math.min(Math.max(1, parseInt(req.query.page, 10) || 1), totalPages);
     const { rows } = await pool.query(
       `SELECT c.id, c.name, c.nome_de_encarregado_d, c.escola, c.localidade, c.ano_escolar,
-              c.telemvel, coalesce(NULLIF(btrim(c.email_ee),''), c.email) AS email,
+              ${seg.PHONES_SQL} AS telefones, coalesce(NULLIF(btrim(c.email_ee),''), c.email) AS email,
               (SELECT string_agg(t.name, ', ' ORDER BY t.name) FROM contact_tags ct JOIN tags t ON t.id = ct.tag_id WHERE ct.contact_id = c.id) AS tags
          FROM export_batch_contacts b JOIN contacts c ON c.id = b.contact_id
         WHERE b.batch_id = $1
