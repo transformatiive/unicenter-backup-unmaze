@@ -20,6 +20,43 @@ const ACCENTED = 'ÁÀÂÃÄáàâãäÉÈÊËéèêëÍÌÎÏíìîïÓÒÔÕÖ
 // º e ª não têm par: o translate apaga-os ("5.º" fica "5").
 const PLAIN = 'AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCcNn';
 
+/*
+ * Erros e formas curtas conhecidas nos nomes de polo e localidade do backup
+ * (vistos nos ficheiros originais em 2026-11-03). Chave já normalizada -> chave final.
+ * Para juntar mais casos, acrescentar aqui.
+ */
+const PLACE_ALIASES = {
+  'sao j madeiira': 'sao joao da madeira',
+  'sao j madeira': 'sao joao da madeira',
+  gaia: 'vila nova de gaia',
+  'povoa santa iria': 'povoa de santa iria',
+  'povoas santa iria': 'povoa de santa iria',
+  'povoa st iria': 'povoa de santa iria',
+  'povoa sta iria': 'povoa de santa iria',
+  viana: 'viana do castelo',
+  'viana de castelo': 'viana do castelo',
+  'viana docastelo': 'viana do castelo',
+  branganca: 'braganca',
+  nraga: 'braga',
+  portp: 'porto',
+  'porto ir 2020': 'porto',
+  'lisb oa': 'lisboa',
+  'caldas das rainha': 'caldas da rainha',
+  'castanheira dpo ribatejo': 'castanheira do ribatejo',
+  valena: 'valenca',
+  'polo famalicao': 'famalicao',
+  'vila franca': 'vila franca de xira',
+  'santa maria feira': 'santa maria da feira',
+  'pacos de feereira': 'pacos de ferreira',
+  'on line': 'online',
+};
+
+function withAliases(keyExpr) {
+  const q = (t) => `'${t.replace(/'/g, "''")}'`;
+  const whens = Object.keys(PLACE_ALIASES).map((k) => `WHEN ${q(k)} THEN ${q(PLACE_ALIASES[k])}`).join(' ');
+  return `(CASE ${keyExpr} ${whens} ELSE ${keyExpr} END)`;
+}
+
 function normKey(col, abbr, dropWords) {
   let x = `lower(translate(coalesce(${col}, ''), '${ACCENTED}', '${PLAIN}'))`;
   x = `regexp_replace(${x}, '[^a-z0-9]+', ' ', 'g')`;
@@ -33,10 +70,12 @@ function normKey(col, abbr, dropWords) {
   }
   if (dropWords) x = `regexp_replace(${x}, '\\m(${dropWords})\\M', ' ', 'g')`;
   x = `regexp_replace(${x}, ' +', ' ', 'g')`;
-  return `NULLIF(btrim(${x}), '')`;
+  const key = `NULLIF(btrim(${x}), '')`;
+  return abbr ? withAliases(key) : key;
 }
 
 const DIMENSIONS = {
+  polo: { label: 'Polo (região)', expr: normKey('c.polo', true), raw: 'c.polo' },
   localidade: { label: 'Localidade', expr: normKey('c.localidade', true), raw: 'c.localidade' },
   escola: { label: 'Escola', expr: normKey('c.escola', false), raw: 'c.escola' },
   ano_escolar: { label: 'Ano escolar', expr: normKey('c.ano_escolar', false, 'ano'), raw: 'c.ano_escolar' },
@@ -57,6 +96,14 @@ const PHONES_SQL = `(SELECT string_agg(p, ' · ' ORDER BY o) FROM (
       FROM unnest(ARRAY[${PHONE_COLS.map((k) => `NULLIF(btrim(c.${k}), '')`).join(', ')}]) WITH ORDINALITY AS u(p, o)
      WHERE p IS NOT NULL
      ORDER BY regexp_replace(p, '\\D', '', 'g'), o) x)`;
+const PHONE_ARRAY = `ARRAY[${PHONE_COLS.map((k) => `NULLIF(btrim(c.${k}), '')`).join(', ')}]`;
+// Primeiro número que parece telemóvel português (9 dígitos a começar por 9).
+const MOBILE_SQL = `(SELECT p FROM unnest(${PHONE_ARRAY}) WITH ORDINALITY AS u(p, o)
+    WHERE regexp_replace(p, '\\D', '', 'g') ~ '^(00351|351)?9[0-9]{8}$' ORDER BY o LIMIT 1)`;
+// Primeiro número diferente do telemóvel escolhido.
+const OTHER_PHONE_SQL = `(SELECT p FROM unnest(${PHONE_ARRAY}) WITH ORDINALITY AS u(p, o)
+    WHERE p IS NOT NULL AND regexp_replace(p, '\\D', '', 'g') <> coalesce(regexp_replace(${MOBILE_SQL}, '\\D', '', 'g'), '')
+    ORDER BY o LIMIT 1)`;
 const ANY_PHONE = `(${PHONE_COLS.map((k) => `NULLIF(btrim(c.${k}), '') IS NOT NULL`).join(' OR ')})`;
 
 // Marcadores especiais nas células (não colidem com valores reais).
@@ -91,9 +138,9 @@ function parseCriteria(raw = {}) {
     const v = raw[k];
     input[k] = Array.isArray(v) && !['rTop', 'cTop', 'cells'].includes(k) ? v[v.length - 1] : v;
   });
-  const r = isDim(input.r) ? input.r : 'localidade';
+  const r = isDim(input.r) ? input.r : 'polo';
   let c = isDim(input.c) ? input.c : 'ano_escolar';
-  if (c === r) c = r === 'ano_escolar' ? 'localidade' : 'ano_escolar';
+  if (c === r) c = r === 'ano_escolar' ? 'polo' : 'ano_escolar';
 
   const bool = (v, dflt) => {
     if (v === undefined || v === null || v === '') return dflt;
@@ -307,6 +354,8 @@ module.exports = {
   PHONE_COLS,
   PHONES_SQL,
   ANY_PHONE,
+  MOBILE_SQL,
+  OTHER_PHONE_SQL,
   prettify,
   normKey,
 };
