@@ -138,6 +138,11 @@ bootstrap()
     .map((k) => `count(*) FILTER (WHERE NULLIF(btrim(${k}), '') IS NOT NULL)::int AS ${k}`).join(', ')}
             FROM contacts`))
         .then(({ rows }) => console.log('[server] resumo contacts:', JSON.stringify(rows[0])))
+        // Respostas usadas no campo de autorização (só valores frequentes, sem nomes).
+        .then(() => pool.query(`SELECT left(btrim(autorizao_uso_dos_dad), 60) AS v, count(*)::int AS n
+            FROM contacts WHERE NULLIF(btrim(autorizao_uso_dos_dad), '') IS NOT NULL
+            GROUP BY 1 HAVING count(*) >= 20 ORDER BY 2 DESC LIMIT 40`))
+        .then(({ rows }) => console.log('[server] valores autorizacao:', JSON.stringify(rows)))
         .then(() => verificacao.runIfDue())
         .catch((err) => console.warn('[server] tarefas de arranque falharam:', err.message));
     });
