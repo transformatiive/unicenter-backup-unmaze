@@ -282,3 +282,13 @@ select.ui-native { position: absolute !important; width: 1px !important; height:
 .ui-select-opt.active, .ui-select-opt:hover { background: var(--teal-row); }
 .ui-select-opt.disabled { color: var(--g400); cursor: default; }
 .btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+/* ---------- lista: ordenar e filtrar por coluna ---------- */
+.th-sort { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+.th-sort:hover, .th-sort.on { color: var(--teal); }
+.th-sort svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .5; }
+.th-sort.on svg { opacity: 1; }
+.table .filter-row th { padding: 6px 8px 10px; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.table .filter-row input[type=text] { margin: 0; padding: 5px 8px; font-size: 13px; min-width: 90px; width: 100%; }
+.table .filter-row input.has-value { border-color: var(--teal); background: #F0F7F7; }
+.table .filter-row .ui-select-trigger { padding: 5px 8px; font-size: 13px; }

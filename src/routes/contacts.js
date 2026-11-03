@@ -1,5 +1,6 @@
 const express = require('express');
 const { pool } = require('../db');
+const seg = require('../lib/segment');
 
 const router = express.Router();
 
@@ -23,22 +24,28 @@ const SEARCHABLE_FIELDS = [
   { key: 'chavealunounmaze', label: 'Chave Unmaze' },
 ];
 
+/*
+ * Colunas da lista. Cada uma pode ser filtrada (caixa por baixo do título) e as
+ * que têm "sort" podem ser ordenadas (clique no título). "Telefones" e "Emails"
+ * juntam todos os campos de telefone e de email.
+ */
 const LIST_COLUMNS = [
-  { key: 'id', label: 'ID' },
-  { key: 'chavealunounmaze', label: 'Chave Unmaze' },
-  { key: 'name', label: 'Nome' },
-  { key: 'escola', label: 'Escola' },
-  { key: 'ano_escolar', label: 'Ano' },
-  { key: 'turma_1', label: 'Turma' },
-  { key: 'nome_de_encarregado_d', label: 'Encarregado de Educação' },
-  { key: 'telefone', label: 'Telefone' },
-  { key: 'telemvel', label: 'Telemóvel' },
-  { key: 'email', label: 'Email' },
-  { key: 'localidade', label: 'Localidade' },
-  { key: 'cod_postal', label: 'Cód. Postal' },
-  { key: 'campanha_actual', label: 'Campanha' },
-  { key: 'status_name', label: 'Estado' },
+  { key: 'id', label: 'ID', sort: 'c.id', filter: 'id' },
+  { key: 'chavealunounmaze', label: 'Chave Unmaze', sort: 'c.chavealunounmaze' },
+  { key: 'name', label: 'Nome', sort: 'c.name' },
+  { key: 'escola', label: 'Escola', sort: 'c.escola' },
+  { key: 'polo', label: 'Polo', sort: 'c.polo' },
+  { key: 'ano_escolar', label: 'Ano', sort: 'c.ano_escolar', filter: 'exact' },
+  { key: 'turma_1', label: 'Turma', sort: 'c.turma_1' },
+  { key: 'nome_de_encarregado_d', label: 'Encarregado de Educação', sort: 'c.nome_de_encarregado_d' },
+  { key: 'telefones', label: 'Telefones', expr: seg.PHONES_SQL, cols: seg.PHONE_COLS },
+  { key: 'emails', label: 'Emails', expr: seg.EMAILS_SQL, cols: seg.EMAIL_COLS },
+  { key: 'localidade', label: 'Localidade', sort: 'c.localidade' },
+  { key: 'cod_postal', label: 'Cód. Postal', sort: 'c.cod_postal' },
+  { key: 'campanha_actual', label: 'Campanha', sort: 'c.campanha_actual' },
+  { key: 'status_name', label: 'Estado', sort: 'c.status_name' },
 ];
+const COL_BY_KEY = Object.fromEntries(LIST_COLUMNS.map((c) => [c.key, c]));
 
 // Agrupamento e etiquetas legíveis para a página de detalhe (todas as colunas reais).
 const FIELD_GROUPS = [
@@ -173,34 +180,92 @@ const HIDDEN_DETAIL_KEYS = new Set(['deleted_at', 'deleted_reason']);
 const PAGE_SIZE_OPTIONS = [100, 250, 500];
 const DEFAULT_PAGE_SIZE = 500;
 
-// Colunas realmente necessárias para a listagem (evita SELECT * de 89 colunas).
-const LIST_SELECT = Array.from(new Set(['id', ...LIST_COLUMNS.map((c) => c.key)]))
-  .map((c) => `"${c}"`)
-  .join(', ');
+// Só as colunas da lista (evita SELECT * de 89 colunas).
+const LIST_SELECT = LIST_COLUMNS.filter((c) => c.key !== 'id')
+  .map((c) => (c.expr ? `${c.expr} AS ${c.key}` : `c."${c.key}"`)).join(', ');
 
 function resolvePageSize(raw) {
   const n = parseInt(raw, 10);
   return PAGE_SIZE_OPTIONS.includes(n) ? n : DEFAULT_PAGE_SIZE;
 }
 
+/* Filtros por coluna: parâmetros f_<coluna>. Devolve só os que têm valor. */
+function columnFilters(query) {
+  const out = {};
+  LIST_COLUMNS.forEach((c) => {
+    const v = query[`f_${c.key}`];
+    if (typeof v === 'string' && v.trim()) out[c.key] = v.trim().slice(0, 200);
+  });
+  return out;
+}
+
+/* Ordenação: sort=<coluna>&dir=asc|desc. Por omissão, mais recentes primeiro. */
+function orderBy(query) {
+  const col = COL_BY_KEY[query.sort];
+  if (!col || !col.sort) return { sql: 'c.id DESC', sort: '', dir: '' };
+  const dir = query.dir === 'desc' ? 'DESC' : 'ASC';
+  return { sql: `${col.sort} ${dir} NULLS LAST, c.id ${dir}`, sort: col.key, dir: dir.toLowerCase() };
+}
+
 function buildWhereClause(query) {
-  const clauses = ['deleted_at IS NULL'];
+  const clauses = ['c.deleted_at IS NULL'];
   const values = [];
 
   if (query.q && query.field) {
     const field = SEARCHABLE_FIELDS.find((f) => f.key === query.field);
     if (field) {
       values.push(`%${query.q}%`);
-      clauses.push(`"${field.key}" ILIKE $${values.length}`);
+      clauses.push(`c."${field.key}" ILIKE $${values.length}`);
     }
   } else if (query.q) {
     // pesquisa livre em todos os campos-chave
     const orParts = SEARCHABLE_FIELDS.map((f) => {
       values.push(`%${query.q}%`);
-      return `"${f.key}" ILIKE $${values.length}`;
+      return `c."${f.key}" ILIKE $${values.length}`;
     });
     clauses.push(`(${orParts.join(' OR ')})`);
   }
+
+  const filters = columnFilters(query);
+  Object.keys(filters).forEach((key) => {
+    const col = COL_BY_KEY[key];
+    const v = filters[key];
+    if (col.filter === 'id') {
+      const n = parseInt(v, 10);
+      if (!Number.isNaN(n)) { values.push(n); clauses.push(`c.id = $${values.length}`); }
+      return;
+    }
+    if (v === '(vazio)') {
+      const cols = col.cols || [key];
+      clauses.push(`(${cols.map((k) => `NULLIF(btrim(c."${k}"), '') IS NULL`).join(' AND ')})`);
+      return;
+    }
+    if (col.filter === 'exact') {
+      // Ano: "5" encontra "5.º Ano", "5º ano", "5" (compara só os algarismos).
+      if (/^\d+$/.test(v)) {
+        values.push(v);
+        clauses.push(`regexp_replace(c."${key}", '\\D', '', 'g') = $${values.length}`);
+      } else {
+        values.push(`%${v}%`);
+        clauses.push(`c."${key}" ILIKE $${values.length}`);
+      }
+      return;
+    }
+    values.push(`%${v}%`);
+    const p = `$${values.length}`;
+    if (col.cols) {
+      // Telefones: compara também só os dígitos (ignora espaços e "+").
+      const digits = v.replace(/\D/g, '');
+      let dp = null;
+      if (key === 'telefones' && digits.length >= 3) { values.push(`%${digits}%`); dp = `$${values.length}`; }
+      const parts = col.cols.map((k) => (dp
+        ? `(c."${k}" ILIKE ${p} OR regexp_replace(c."${k}", '\\D', '', 'g') LIKE ${dp})`
+        : `c."${k}" ILIKE ${p}`));
+      clauses.push(`(${parts.join(' OR ')})`);
+    } else {
+      clauses.push(`c."${key}" ILIKE ${p}`);
+    }
+  });
 
   return { where: clauses.join(' AND '), values };
 }
@@ -210,14 +275,16 @@ router.get('/', async (req, res, next) => {
     const pageSize = resolvePageSize(req.query.pageSize);
     const { where, values } = buildWhereClause(req.query);
 
-    const countResult = await pool.query(`SELECT count(*)::int AS n FROM contacts WHERE ${where}`, values);
+    const order = orderBy(req.query);
+    const filters = columnFilters(req.query);
+    const countResult = await pool.query(`SELECT count(*)::int AS n FROM contacts c WHERE ${where}`, values);
     const total = countResult.rows[0].n;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const page = Math.min(Math.max(1, parseInt(req.query.page, 10) || 1), totalPages);
 
     const listValues = [...values, pageSize, (page - 1) * pageSize];
     const { rows } = await pool.query(
-      `SELECT ${LIST_SELECT} FROM contacts WHERE ${where} ORDER BY id DESC LIMIT $${listValues.length - 1} OFFSET $${listValues.length}`,
+      `SELECT c.id, ${LIST_SELECT} FROM contacts c WHERE ${where} ORDER BY ${order.sql} LIMIT $${listValues.length - 1} OFFSET $${listValues.length}`,
       listValues,
     );
 
@@ -229,6 +296,9 @@ router.get('/', async (req, res, next) => {
       columns: LIST_COLUMNS,
       searchableFields: SEARCHABLE_FIELDS,
       query: req.query,
+      filters,
+      sort: order.sort,
+      dir: order.dir,
       total,
       page,
       totalPages,

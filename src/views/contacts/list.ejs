@@ -4,9 +4,28 @@
 <body>
   <%- include('../partials/nav') %>
   <main class="container container-wide">
+    <%
+      var ANOS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', 'apagar', '(vazio)'];
+      // Endereço da lista com a pesquisa, filtros e ordem atuais, mudando só o que se pede.
+      function url(over) {
+        var params = new URLSearchParams();
+        var base = { q: query.q || '', field: query.field || '', sort: sort, dir: dir, pageSize: pageSize, page: page };
+        Object.keys(filters).forEach(function (k) { base['f_' + k] = filters[k]; });
+        Object.keys(over || {}).forEach(function (k) { base[k] = over[k]; });
+        Object.keys(base).forEach(function (k) { if (base[k] !== '' && base[k] !== null && base[k] !== undefined) params.set(k, base[k]); });
+        return '/contacts?' + params.toString();
+      }
+      function pageUrl(p) { return url({ page: p }); }
+      function sortUrl(key) {
+        var d = sort === key && dir === 'asc' ? 'desc' : 'asc';
+        return url({ sort: key, dir: d, page: 1 });
+      }
+      var backParam = encodeURIComponent(url({}).split('?')[1] || '');
+      var nFilters = Object.keys(filters).length;
+    %>
     <h1>Contactos <small class="tn"><%= total.toLocaleString('pt-PT') %></small></h1>
 
-    <form method="GET" action="/contacts" class="search-bar">
+    <form method="GET" action="/contacts" class="search-bar" id="filtros">
       <select name="field">
         <option value="">Todos os campos-chave</option>
         <% searchableFields.forEach(function(f) { %>
@@ -15,29 +34,11 @@
       </select>
       <input type="text" name="q" placeholder="Pesquisar..." value="<%= query.q || '' %>">
       <input type="hidden" name="pageSize" value="<%= pageSize %>">
+      <input type="hidden" name="sort" value="<%= sort %>">
+      <input type="hidden" name="dir" value="<%= dir %>">
       <button type="submit" class="btn btn-primary">Pesquisar</button>
-      <% if (query.q) { %><a href="/contacts?pageSize=<%= pageSize %>" class="btn btn-small">Limpar</a><% } %>
+      <% if (query.q || nFilters) { %><a href="/contacts?pageSize=<%= pageSize %>" class="btn btn-small">Limpar tudo</a><% } %>
     </form>
-
-    <%
-      function pageUrl(p) {
-        var params = new URLSearchParams();
-        if (query.q) params.set('q', query.q);
-        if (query.field) params.set('field', query.field);
-        params.set('pageSize', pageSize);
-        params.set('page', p);
-        return '/contacts?' + params.toString();
-      }
-      var currentQs = (function () {
-        var params = new URLSearchParams();
-        if (query.q) params.set('q', query.q);
-        if (query.field) params.set('field', query.field);
-        params.set('pageSize', pageSize);
-        params.set('page', page);
-        return params.toString();
-      })();
-      var backParam = encodeURIComponent(currentQs);
-    %>
 
     <div class="list-toolbar">
       <span class="hint">
@@ -47,10 +48,15 @@
         <% } else { %>
           Nenhum registo encontrado
         <% } %>
+        <% if (nFilters) { %> · <%= nFilters %> filtro(s) por coluna<% } %>
+        · Clique no título de uma coluna para ordenar. Escreva por baixo do título para filtrar e carregue Enter. "(vazio)" mostra os que não têm valor.
       </span>
       <form method="GET" action="/contacts" class="page-size">
         <input type="hidden" name="q" value="<%= query.q || '' %>">
         <input type="hidden" name="field" value="<%= query.field || '' %>">
+        <input type="hidden" name="sort" value="<%= sort %>">
+        <input type="hidden" name="dir" value="<%= dir %>">
+        <% Object.keys(filters).forEach(function (k) { %><input type="hidden" name="f_<%= k %>" value="<%= filters[k] %>"><% }) %>
         <label>Por página
           <select name="pageSize" onchange="this.form.submit()">
             <% pageSizeOptions.forEach(function(opt) { %>
@@ -64,6 +70,7 @@
     <form method="POST" action="/lotes/pesquisa" id="export-form" data-total="<%= total %>">
       <input type="hidden" name="q" value="<%= query.q || '' %>">
       <input type="hidden" name="field" value="<%= query.field || '' %>">
+      <% Object.keys(filters).forEach(function (k) { %><input type="hidden" name="f_<%= k %>" value="<%= filters[k] %>"><% }) %>
       <input type="hidden" name="ids" id="export-ids" value="">
 
       <div class="table-actions">
@@ -73,7 +80,7 @@
         <button type="submit" name="scope" value="all" class="btn btn-primary" onclick="return prepareExport('all')">
           Criar lote com todos os resultados
         </button>
-        <span class="hint">Cada exportação é um lote: escolhe o formato (CSV ou Excel) a seguir.</span>
+        <span class="hint">Cada exportação é um lote: escolhe o formato (CSV ou Excel) a seguir. Os filtros por coluna também contam.</span>
       </div>
 
       <div class="table-wrap">
@@ -81,8 +88,32 @@
           <thead>
             <tr>
               <th class="col-check"><input type="checkbox" id="select-all"></th>
-              <% columns.forEach(function(c) { %><th><%= c.label %></th><% }) %>
+              <% columns.forEach(function(c) { %>
+                <th>
+                  <% if (c.sort) { %>
+                    <a class="th-sort<%= sort === c.key ? ' on' : '' %>" href="<%= sortUrl(c.key) %>" title="Ordenar por <%= c.label %>"><%= c.label %>
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><% if (sort === c.key && dir === 'desc') { %><path d="m6 9 6 6 6-6"/><% } else if (sort === c.key) { %><path d="m6 15 6-6 6 6"/><% } else { %><path d="m8 9 4-4 4 4M8 15l4 4 4-4"/><% } %></svg>
+                    </a>
+                  <% } else { %><%= c.label %><% } %>
+                </th>
+              <% }) %>
               <th class="col-action"></th>
+            </tr>
+            <tr class="filter-row">
+              <th class="col-check"></th>
+              <% columns.forEach(function(c) { %>
+                <th>
+                  <% if (c.key === 'ano_escolar') { %>
+                    <select name="f_ano_escolar" form="filtros" class="inline" onchange="document.getElementById('filtros').requestSubmit()">
+                      <option value="">Todos</option>
+                      <% ANOS.forEach(function (a) { %><option value="<%= a %>" <%= filters.ano_escolar === a ? 'selected' : '' %>><%= a %></option><% }) %>
+                    </select>
+                  <% } else { %>
+                    <input type="text" name="f_<%= c.key %>" form="filtros" value="<%= filters[c.key] || '' %>" placeholder="Filtrar" aria-label="Filtrar <%= c.label %>" class="<%= filters[c.key] ? 'has-value' : '' %>">
+                  <% } %>
+                </th>
+              <% }) %>
+              <th class="col-action"><% if (nFilters) { %><a class="btn btn-small" href="<%= url(Object.keys(filters).reduce(function (o, k) { o['f_' + k] = ''; return o; }, { page: 1 })) %>">Limpar</a><% } else { %><button type="submit" form="filtros" class="btn btn-small">Filtrar</button><% } %></th>
             </tr>
           </thead>
           <tbody>
@@ -93,7 +124,7 @@
                 <% if (c.key === 'id') { %>
                   <td><a class="row-link" href="/contacts/<%= r.id %>?back=<%= backParam %>"><%= r.id %></a></td>
                 <% } else { %>
-                  <td><%= r[c.key] || '' %></td>
+                  <td<%= c.cols ? ' class=tn' : '' %>><%= r[c.key] || '' %></td>
                 <% } %>
               <% }) %>
               <td class="col-action"><a class="btn btn-small" href="/contacts/<%= r.id %>?back=<%= backParam %>">Ver ›</a></td>
@@ -133,6 +164,9 @@
         <input type="hidden" name="q" value="<%= query.q || '' %>">
         <input type="hidden" name="field" value="<%= query.field || '' %>">
         <input type="hidden" name="pageSize" value="<%= pageSize %>">
+        <input type="hidden" name="sort" value="<%= sort %>">
+        <input type="hidden" name="dir" value="<%= dir %>">
+        <% Object.keys(filters).forEach(function (k) { %><input type="hidden" name="f_<%= k %>" value="<%= filters[k] %>"><% }) %>
         <label>Ir para
           <input type="number" name="page" min="1" max="<%= totalPages %>" value="<%= page %>">
         </label>

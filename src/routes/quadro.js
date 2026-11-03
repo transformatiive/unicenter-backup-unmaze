@@ -27,13 +27,18 @@ router.get('/', async (req, res, next) => {
   try {
     const crit = seg.parseCriteria(req.query);
     const key = `matrix:${JSON.stringify([crit.r, crit.c, crit.camp, crit.tag, crit.aut, crit.excl])}`;
-    const [matrix, tags, campaigns] = await Promise.all([
+    const [matrix, tags, campaigns, allTotal] = await Promise.all([
       cache.remember(key, 60, () => seg.buildMatrix(pool, crit)),
       listTags(),
       listCampaigns(),
+      cache.remember('allTotal', 300, async () => {
+        const { rows } = await pool.query('SELECT count(*)::int AS n FROM contacts WHERE deleted_at IS NULL');
+        return rows[0].n;
+      }),
     ]);
     res.render('quadro/index', {
       crit,
+      allTotal,
       matrix,
       tags,
       campaigns,
