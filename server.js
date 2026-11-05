@@ -12,6 +12,7 @@ const authRoutes = require('./src/routes/auth');
 const contactsRoutes = require('./src/routes/contacts');
 const adminRoutes = require('./src/routes/admin');
 const verificacao = require('./src/lib/verificacao');
+const seg = require('./src/lib/segment');
 const gdprRoutes = require('./src/routes/gdpr');
 const quadroRoutes = require('./src/routes/quadro');
 const lotesRoutes = require('./src/routes/lotes');
@@ -143,6 +144,15 @@ bootstrap()
             FROM contacts WHERE NULLIF(btrim(autorizao_uso_dos_dad), '') IS NOT NULL
             GROUP BY 1 HAVING count(*) >= 20 ORDER BY 2 DESC LIMIT 40`))
         .then(({ rows }) => console.log('[server] valores autorizacao:', JSON.stringify(rows)))
+        // Registos sem nenhum telefone e sem nenhum email (incontactáveis). Só contagens.
+        .then(() => pool.query(`SELECT count(*) FILTER (WHERE NOT ${seg.ANY_PHONE} AND NOT ${seg.ANY_EMAIL})::int AS incontactaveis,
+            count(*) FILTER (WHERE NOT ${seg.ANY_PHONE} AND NOT ${seg.ANY_EMAIL} AND ${seg.AUTH_EXPR})::int AS incontactaveis_autorizados,
+            count(*) FILTER (WHERE ${seg.ANY_PHONE} AND NOT ${seg.ANY_EMAIL})::int AS so_telefone,
+            count(*) FILTER (WHERE NOT ${seg.ANY_PHONE} AND ${seg.ANY_EMAIL})::int AS so_email,
+            count(*) FILTER (WHERE ${seg.ANY_PHONE} AND ${seg.ANY_EMAIL})::int AS telefone_e_email,
+            count(*)::int AS total
+            FROM contacts c WHERE c.deleted_at IS NULL`))
+        .then(({ rows }) => console.log('[server] contactabilidade:', JSON.stringify(rows[0])))
         .then(() => verificacao.runIfDue())
         .catch((err) => console.warn('[server] tarefas de arranque falharam:', err.message));
     });
